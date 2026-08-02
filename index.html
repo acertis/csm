@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script>
@@ -135,10 +136,28 @@
 
       <!-- CARTEIRA -->
       <section id="view-carteira" class="view">
-        <div class="flex items-center justify-between mb-4 gap-3">
-          <input id="carteiraSearch" type="text" placeholder="Buscar por cliente, domínio ou responsável..."
-            class="w-full max-w-sm text-sm border border-slate-200 rounded-lg px-3.5 py-2.5 bg-white shadow-card focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
-          <button onclick="openClienteModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2.5 rounded-lg transition whitespace-nowrap">+ Novo Cliente</button>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 gap-3">
+          <div class="relative flex-1 max-w-sm">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="carteiraSearch" type="text" placeholder="Buscar por cliente, domínio ou responsável..."
+              class="w-full pl-9 pr-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-white shadow-card focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
+          </div>
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button onclick="exportCarteiraXlsx()" title="Exportar carteira atual para Excel (.xlsx)"
+              class="inline-flex items-center gap-1.5 text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-lg shadow-card transition">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar
+            </button>
+            <button onclick="openImportModal()" title="Importar planilha de clientes (.xlsx, .csv)"
+              class="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 px-3.5 py-2 rounded-lg shadow-card transition">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Importar Planilha
+            </button>
+            <button onclick="openClienteModal()" class="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2 rounded-lg shadow-card transition whitespace-nowrap">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Cliente
+            </button>
+          </div>
         </div>
         <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
           <div class="overflow-x-auto">
@@ -269,8 +288,10 @@ function healthBadge(score) {
 }
 function formatBRL(n) { return (n || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 }); }
 function closeModal() { document.getElementById('modalRoot').classList.add('hidden'); }
-function openModal(html) {
-  document.getElementById('modalCard').innerHTML = html;
+function openModal(html, maxW = 'max-w-md') {
+  const card = document.getElementById('modalCard');
+  card.className = `bg-white rounded-2xl shadow-xl w-full ${maxW} p-6 max-h-[90vh] overflow-y-auto transition-all`;
+  card.innerHTML = html;
   document.getElementById('modalRoot').classList.remove('hidden');
 }
 function toast(msg, isError) {
@@ -598,6 +619,648 @@ function openCasoModal() {
     if (error) return toast(error.message, true);
     closeModal(); toast('Caso registrado.'); renderRisco(); renderDashboard();
   });
+}
+
+// ============================================================
+// IMPORTAÇÃO E EXPORTAÇÃO DE DADOS (XLSX / CSV)
+// ============================================================
+const DB_CLIENTE_FIELDS = [
+  { key: 'dominio', label: 'Domínio * (Identificador Único)', required: true, aliases: ['dominio','domínio','domain','site','url','web','link'] },
+  { key: 'razao_social', label: 'Razão Social / Nome da Empresa', required: false, aliases: ['razao_social','razão social','razao social','nome','empresa','cliente','razao','company','nome da empresa','nome fantasia'] },
+  { key: 'responsavel', label: 'Responsável (CSM)', required: false, aliases: ['responsavel','responsável','cs','csm','gestor','owner','analista','responsavel cs','account manager'] },
+  { key: 'health_score', label: 'Health Score', required: false, aliases: ['health_score','health score','health','saude','saúde','status saude','status_saude'] },
+  { key: 'jornada', label: 'Jornada do Cliente', required: false, aliases: ['jornada','etapa','fase','estagio','stage','status jornada','jornada do cliente','lifecycle'] },
+  { key: 'mrr', label: 'MRR (R$)', required: false, aliases: ['mrr','receita','valor','faturamento','mensalidade','revenue','valor mensal','mrr atual'] },
+  { key: 'vertical', label: 'Vertical / Segmento', required: false, aliases: ['vertical','segmento','setor','ramo','area','industria'] },
+  { key: 'prioridade', label: 'Prioridade (Tier)', required: false, aliases: ['prioridade','priority','tier','faixa','classificacao'] },
+  { key: 'cidade', label: 'Cidade', required: false, aliases: ['cidade','city','municipio'] },
+  { key: 'uf', label: 'UF / Estado', required: false, aliases: ['uf','estado','state'] },
+  { key: 'engajamento', label: 'Engajamento', required: false, aliases: ['engajamento','engagement'] },
+  { key: 'satisfacao_percebida', label: 'Satisfação Percebida', required: false, aliases: ['satisfacao_percebida','satisfacao','satisfação','nps','csat'] },
+  { key: 'tempo_contrato', label: 'Tempo de Contrato', required: false, aliases: ['tempo_contrato','contrato','tempo de contrato','meses'] },
+  { key: 'inadimplencia', label: 'Inadimplência', required: false, aliases: ['inadimplencia','inadimplência','inadimplente','atraso'] },
+  { key: 'ultima_atividade', label: 'Última Atividade', required: false, aliases: ['ultima_atividade','última atividade','ultima atividade','last activity'] }
+];
+
+let importState = {
+  fileName: '',
+  fileSize: 0,
+  rawHeaders: [],
+  rawRows: [],
+  fieldMapping: {},
+  upsertMode: true
+};
+
+function normalizeStringClean(str) {
+  return String(str || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+function cleanDomain(val) {
+  if (!val) return '';
+  let str = String(val).trim().toLowerCase();
+  str = str.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  str = str.split('/')[0];
+  return str.trim();
+}
+
+function cleanMrr(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  let str = String(val).trim().replace(/[R$\s]/g, '');
+  if (str.includes(',') && str.includes('.')) {
+    if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else {
+      str = str.replace(/,/g, '');
+    }
+  } else if (str.includes(',')) {
+    str = str.replace(',', '.');
+  }
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : Math.round(n * 100) / 100;
+}
+
+function cleanHealthScore(val) {
+  if (!val) return null;
+  const str = normalizeStringClean(val);
+  if (str.includes('saud')) return 'Saudável';
+  if (str.includes('alert')) return 'Em Alerta';
+  if (str.includes('risc')) return 'Em Risco';
+  if (str.includes('churn') || str.includes('retenc')) return 'Retenção de Churn';
+  const directMap = {
+    'saudavel': 'Saudável', 'emalerta': 'Em Alerta', 'emrisco': 'Em Risco', 'retencaodechurn': 'Retenção de Churn'
+  };
+  return directMap[str] || null;
+}
+
+function cleanInadimplencia(val) {
+  if (!val) return 'Não';
+  const str = normalizeStringClean(val);
+  if (['sim', 's', 'yes', 'y', 'true', '1', 'inadimplente'].includes(str)) return 'Sim';
+  return 'Não';
+}
+
+function openImportModal() {
+  importState = {
+    fileName: '',
+    fileSize: 0,
+    rawHeaders: [],
+    rawRows: [],
+    fieldMapping: {},
+    upsertMode: true
+  };
+  renderImportStep1();
+}
+
+function renderImportStep1() {
+  const html = `
+    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+      <div>
+        <h3 class="font-bold text-slate-900 text-base">Importar Clientes em Massa</h3>
+        <p class="text-xs text-slate-400 mt-0.5">Carregue sua base a partir de planilhas Excel (.xlsx, .xls) ou arquivos CSV.</p>
+      </div>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- DROPZONE -->
+    <div id="importDropZone" class="border-2 border-dashed border-slate-200 hover:border-brand-400 bg-slate-50/60 hover:bg-brand-50/20 rounded-2xl p-8 text-center transition cursor-pointer group">
+      <input type="file" id="importFileInput" accept=".xlsx, .xls, .csv" class="hidden">
+      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-brand-100/70 text-brand-600 flex items-center justify-center group-hover:scale-110 transition">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <p class="font-semibold text-sm text-slate-800 mb-1">Arraste e solte sua planilha aqui</p>
+      <p class="text-xs text-slate-400 mb-4">Suporta arquivos <span class="font-mono font-medium text-slate-600">.xlsx</span>, <span class="font-mono font-medium text-slate-600">.xls</span> ou <span class="font-mono font-medium text-slate-600">.csv</span></p>
+      <button type="button" onclick="document.getElementById('importFileInput').click()" class="inline-flex items-center gap-2 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Selecionar Arquivo
+      </button>
+    </div>
+
+    <!-- MODELO DE PLANILHA -->
+    <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-slate-800">Precisa de um modelo pronto?</p>
+          <p class="text-[11px] text-slate-400">Baixe uma planilha com as colunas certas e dados de exemplo.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <button type="button" onclick="downloadImportTemplate('xlsx')" class="flex-1 sm:flex-none text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition">
+          Baixar .XLSX
+        </button>
+        <button type="button" onclick="downloadImportTemplate('csv')" class="flex-1 sm:flex-none text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition">
+          Baixar .CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- INFORMAÇÕES DE COLUNAS -->
+    <div class="mt-4 text-[11px] text-slate-400 space-y-1">
+      <p class="font-medium text-slate-500">Dicas para importação:</p>
+      <ul class="list-disc pl-4 space-y-0.5">
+        <li>A coluna <strong class="text-slate-600">Domínio</strong> é obrigatória e usada como identificador único (ex: <code>empresa.com.br</code>).</li>
+        <li>Campos como <strong class="text-slate-600">MRR</strong> (R$), <strong class="text-slate-600">Health Score</strong> e <strong class="text-slate-600">Responsável</strong> são automaticamente formatados.</li>
+        <li>Você poderá revisar o mapeamento de cada coluna antes de confirmar o salvamento.</li>
+      </ul>
+    </div>
+  `;
+
+  openModal(html, 'max-w-2xl');
+  setupDropZone();
+}
+
+function setupDropZone() {
+  const dropZone = document.getElementById('importDropZone');
+  const fileInput = document.getElementById('importFileInput');
+  if (!dropZone || !fileInput) return;
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-brand-500', 'bg-brand-50/40');
+  });
+
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-brand-500', 'bg-brand-50/40');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-brand-500', 'bg-brand-50/40');
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processImportFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processImportFile(e.target.files[0]);
+    }
+  });
+}
+
+function processImportFile(file) {
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+    return toast('Formato inválido. Envie um arquivo .xlsx, .xls ou .csv', true);
+  }
+
+  importState.fileName = file.name;
+  importState.fileSize = file.size;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      
+      const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+
+      if (!jsonRows || jsonRows.length === 0) {
+        return toast('A planilha selecionada está vazia ou sem linhas de dados.', true);
+      }
+
+      // Detect headers
+      const headers = Object.keys(jsonRows[0]);
+      importState.rawHeaders = headers;
+      importState.rawRows = jsonRows;
+
+      // Auto match mappings
+      autoMatchHeaders();
+      renderImportStep2();
+    } catch (err) {
+      console.error(err);
+      toast('Erro ao processar planilha: ' + err.message, true);
+    }
+  };
+  reader.onerror = () => toast('Erro ao ler arquivo.', true);
+  reader.readAsArrayBuffer(file);
+}
+
+function autoMatchHeaders() {
+  importState.fieldMapping = {};
+  const cleanHeaderMap = {};
+  importState.rawHeaders.forEach(h => {
+    cleanHeaderMap[normalizeStringClean(h)] = h;
+  });
+
+  DB_CLIENTE_FIELDS.forEach(field => {
+    let matchedHeader = null;
+    for (const alias of field.aliases) {
+      const cleanAlias = normalizeStringClean(alias);
+      if (cleanHeaderMap[cleanAlias]) {
+        matchedHeader = cleanHeaderMap[cleanAlias];
+        break;
+      }
+    }
+    if (matchedHeader) {
+      importState.fieldMapping[field.key] = matchedHeader;
+    }
+  });
+}
+
+function getProcessedRecords() {
+  const mapping = importState.fieldMapping;
+  const processed = [];
+  const invalidRows = [];
+
+  importState.rawRows.forEach((row, idx) => {
+    const rawDom = mapping.dominio ? row[mapping.dominio] : '';
+    const dom = cleanDomain(rawDom);
+
+    if (!dom) {
+      invalidRows.push({ line: idx + 2, reason: 'Domínio ausente ou inválido', raw: row });
+      return;
+    }
+
+    const item = {
+      dominio: dom,
+      razao_social: mapping.razao_social && row[mapping.razao_social] ? String(row[mapping.razao_social]).trim() : dom,
+      responsavel: mapping.responsavel && row[mapping.responsavel] ? String(row[mapping.responsavel]).trim() : null,
+      health_score: mapping.health_score ? cleanHealthScore(row[mapping.health_score]) : null,
+      jornada: mapping.jornada && row[mapping.jornada] ? String(row[mapping.jornada]).trim() : 'Onboarding',
+      mrr: mapping.mrr ? cleanMrr(row[mapping.mrr]) : 0,
+      vertical: mapping.vertical && row[mapping.vertical] ? String(row[mapping.vertical]).trim() : null,
+      prioridade: mapping.prioridade && row[mapping.prioridade] ? String(row[mapping.prioridade]).trim() : null,
+      cidade: mapping.cidade && row[mapping.cidade] ? String(row[mapping.cidade]).trim() : null,
+      uf: mapping.uf && row[mapping.uf] ? String(row[mapping.uf]).trim().toUpperCase().slice(0,2) : null,
+      engajamento: mapping.engajamento && row[mapping.engajamento] ? String(row[mapping.engajamento]).trim() : null,
+      satisfacao_percebida: mapping.satisfacao_percebida && row[mapping.satisfacao_percebida] ? String(row[mapping.satisfacao_percebida]).trim() : null,
+      tempo_contrato: mapping.tempo_contrato && row[mapping.tempo_contrato] ? String(row[mapping.tempo_contrato]).trim() : null,
+      inadimplencia: mapping.inadimplencia ? cleanInadimplencia(row[mapping.inadimplencia]) : 'Não',
+      ultima_atividade: mapping.ultima_atividade && row[mapping.ultima_atividade] ? String(row[mapping.ultima_atividade]).trim() : null
+    };
+
+    processed.push(item);
+  });
+
+  return { processed, invalidRows };
+}
+
+function renderImportStep2() {
+  const { processed, invalidRows } = getProcessedRecords();
+  const totalRows = importState.rawRows.length;
+  const validCount = processed.length;
+
+  const html = `
+    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-mono font-semibold bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">Passo 2 de 2</span>
+          <h3 class="font-bold text-slate-900 text-base">Revisão e Mapeamento de Colunas</h3>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">Arquivo: <strong class="text-slate-700 font-mono">${importState.fileName}</strong> (${totalRows} registros encontrados)</p>
+      </div>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- MAPPING ACCORDION / GRID -->
+    <div class="mb-5 bg-slate-50 border border-slate-200/80 rounded-xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><circle cx="4" cy="14" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="16" r="2"/></svg>
+          Mapeamento dos Campos
+        </h4>
+        <span class="text-[11px] text-slate-400">Verifique se as colunas da planilha correspondem aos campos do sistema</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        ${DB_CLIENTE_FIELDS.map(f => {
+          const selected = importState.fieldMapping[f.key] || '';
+          return `
+            <div class="bg-white p-2.5 rounded-lg border border-slate-200">
+              <label class="text-[11px] font-semibold ${f.required ? 'text-brand-600' : 'text-slate-600'} block truncate" title="${f.label}">
+                ${f.label}
+              </label>
+              <select onchange="onMappingChange('${f.key}', this.value)" class="w-full mt-1 text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-400">
+                <option value="">— Não mapear —</option>
+                ${importState.rawHeaders.map(h => `<option value="${h}" ${h === selected ? 'selected' : ''}>${h}</option>`).join('')}
+              </select>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- OPÇÃO DE UPSERT -->
+    <div class="mb-5 flex items-center gap-3 p-3 bg-brand-50/50 border border-brand-100 rounded-xl">
+      <input type="checkbox" id="importUpsertToggle" ${importState.upsertMode ? 'checked' : ''} onchange="importState.upsertMode = this.checked" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+      <label for="importUpsertToggle" class="text-xs text-slate-700 cursor-pointer">
+        <strong class="font-semibold text-slate-900">Atualizar registros existentes (Upsert):</strong> Se o domínio já existir na base, atualiza os dados com a planilha. Se desmarcado, domínios existentes serão mantidos.
+      </label>
+    </div>
+
+    <!-- PREVIEW TABLE -->
+    <div class="mb-5">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-xs font-bold text-slate-800">Pré-visualização dos dados (primeiras linhas)</h4>
+        <span class="text-xs font-mono font-medium ${validCount > 0 ? 'text-emerald-600' : 'text-red-600'}">
+          ${validCount} de ${totalRows} registros válidos para importar
+        </span>
+      </div>
+
+      <div id="previewTableContainer" class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+        ${renderPreviewTableHtml(processed)}
+      </div>
+
+      ${invalidRows.length > 0 ? `
+        <div class="mt-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
+          <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <strong>Atenção:</strong> ${invalidRows.length} linha(s) não possuem o campo <em>Domínio</em> preenchido e serão desconsideradas.
+          </div>
+        </div>
+      ` : ''}
+    </div>
+
+    <!-- BOTÕES DE AÇÃO -->
+    <div class="flex items-center justify-between pt-4 border-t border-slate-100 gap-3">
+      <button type="button" onclick="renderImportStep1()" class="text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 px-4 py-2.5 rounded-lg transition">
+        ← Trocar Arquivo
+      </button>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="closeModal()" class="text-xs font-medium text-slate-500 hover:text-slate-700 px-4 py-2.5 rounded-lg transition">
+          Cancelar
+        </button>
+        <button type="button" onclick="startImportExecution()" ${validCount === 0 ? 'disabled' : ''} class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg shadow-sm transition">
+          Confirmar e Importar (${validCount} clientes)
+        </button>
+      </div>
+    </div>
+  `;
+
+  openModal(html, 'max-w-4xl');
+}
+
+function renderPreviewTableHtml(processed) {
+  if (!processed || processed.length === 0) {
+    return `<div class="p-8 text-center text-slate-400 text-xs">Nenhum dado válido para exibição. Verifique se o campo "Domínio" está mapeado para a coluna correta.</div>`;
+  }
+
+  const sample = processed.slice(0, 5);
+  return `
+    <div class="overflow-x-auto max-h-60">
+      <table class="w-full text-xs text-left">
+        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider sticky top-0">
+          <tr>
+            <th class="px-3.5 py-2.5">Domínio</th>
+            <th class="px-3.5 py-2.5">Razão Social</th>
+            <th class="px-3.5 py-2.5">Responsável</th>
+            <th class="px-3.5 py-2.5">Health Score</th>
+            <th class="px-3.5 py-2.5">Jornada</th>
+            <th class="px-3.5 py-2.5 text-right">MRR</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          ${sample.map(r => `
+            <tr class="hover:bg-slate-50/70 transition">
+              <td class="px-3.5 py-2 font-mono text-slate-800">${r.dominio}</td>
+              <td class="px-3.5 py-2 text-slate-700 truncate max-w-[180px]">${r.razao_social || '—'}</td>
+              <td class="px-3.5 py-2 text-slate-600">${r.responsavel || '—'}</td>
+              <td class="px-3.5 py-2">${healthBadge(r.health_score)}</td>
+              <td class="px-3.5 py-2 text-slate-600">${r.jornada || '—'}</td>
+              <td class="px-3.5 py-2 text-right font-mono text-slate-800">${formatBRL(r.mrr)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function onMappingChange(fieldKey, rawHeader) {
+  importState.fieldMapping[fieldKey] = rawHeader;
+  const { processed } = getProcessedRecords();
+  const container = document.getElementById('previewTableContainer');
+  if (container) {
+    container.innerHTML = renderPreviewTableHtml(processed);
+  }
+}
+
+async function startImportExecution() {
+  const { processed } = getProcessedRecords();
+  if (!processed || processed.length === 0) {
+    return toast('Não há registros válidos para importar.', true);
+  }
+
+  // Render Step 3: Loading Progress
+  const total = processed.length;
+  openModal(`
+    <div class="py-8 px-4 text-center">
+      <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center animate-spin">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+      </div>
+      <h3 class="font-bold text-slate-900 text-base mb-1">Importando clientes...</h3>
+      <p id="importProgressMsg" class="text-xs text-slate-500 mb-5">Processando registros e salvando no Supabase...</p>
+      
+      <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden mb-2">
+        <div id="importProgressBar" class="bg-brand-600 h-3 rounded-full transition-all duration-200" style="width: 0%"></div>
+      </div>
+      <p id="importProgressPercent" class="text-xs font-mono font-semibold text-slate-700">0%</p>
+    </div>
+  `, 'max-w-md');
+
+  const chunkSize = 50;
+  let importedCount = 0;
+  let errorCount = 0;
+  const errors = [];
+
+  for (let i = 0; i < total; i += chunkSize) {
+    const chunk = processed.slice(i, i + chunkSize);
+    const progress = Math.min(100, Math.round(((i + chunk.length) / total) * 100));
+
+    const bar = document.getElementById('importProgressBar');
+    const pct = document.getElementById('importProgressPercent');
+    const msg = document.getElementById('importProgressMsg');
+    if (bar) bar.style.width = progress + '%';
+    if (pct) pct.textContent = `${progress}% (${Math.min(i + chunk.length, total)} de ${total})`;
+    if (msg) msg.textContent = `Enviando lote ${Math.floor(i / chunkSize) + 1} de ${Math.ceil(total / chunkSize)}...`;
+
+    try {
+      const { error } = importState.upsertMode
+        ? await sb.from('clientes').upsert(chunk, { onConflict: 'dominio' })
+        : await sb.from('clientes').insert(chunk);
+
+      if (error) {
+        console.error('Erro no lote:', error);
+        errorCount += chunk.length;
+        errors.push(error.message);
+      } else {
+        importedCount += chunk.length;
+      }
+    } catch (err) {
+      console.error(err);
+      errorCount += chunk.length;
+      errors.push(err.message);
+    }
+  }
+
+  // Render Step 4: Finished Summary
+  renderImportSummary(total, importedCount, errorCount, errors);
+  await loadAll();
+}
+
+function renderImportSummary(total, importedCount, errorCount, errors) {
+  const isSuccess = errorCount === 0;
+
+  openModal(`
+    <div class="text-center py-4">
+      <div class="w-14 h-14 mx-auto mb-3 rounded-full ${isSuccess ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} flex items-center justify-center">
+        ${isSuccess ? `
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        ` : `
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        `}
+      </div>
+
+      <h3 class="font-bold text-slate-900 text-lg mb-1">${isSuccess ? 'Importação Concluída!' : 'Importação Finalizada com Alertas'}</h3>
+      <p class="text-xs text-slate-500 mb-5">Os dados foram processados e já estão disponíveis no sistema.</p>
+
+      <div class="grid grid-cols-2 gap-3 mb-5 text-left">
+        <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
+          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Importados / Atualizados</p>
+          <p class="font-mono text-xl font-bold text-emerald-600 mt-1">${importedCount}</p>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
+          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Falhas ou Ignorados</p>
+          <p class="font-mono text-xl font-bold ${errorCount > 0 ? 'text-red-600' : 'text-slate-700'} mt-1">${errorCount}</p>
+        </div>
+      </div>
+
+      ${errors.length > 0 ? `
+        <div class="text-left bg-red-50 border border-red-200 rounded-xl p-3 mb-5 max-h-28 overflow-y-auto text-xs text-red-700">
+          <p class="font-semibold mb-1">Detalhes dos erros:</p>
+          <ul class="list-disc pl-4 space-y-0.5">
+            ${errors.map(e => `<li>${e}</li>`).join('')}
+          </ul>
+        </div>
+      ` : ''}
+
+      <button onclick="closeModal()" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold py-2.5 rounded-lg shadow-sm transition">
+        Concluir e Ver Carteira
+      </button>
+    </div>
+  `, 'max-w-md');
+}
+
+function downloadImportTemplate(format = 'xlsx') {
+  const sampleData = [
+    {
+      "Domínio": "empresaexemplo.com.br",
+      "Razão Social": "Empresa Exemplo Comércio e Serviços Ltda",
+      "Responsável": "Carlos Silva",
+      "Health Score": "Saudável",
+      "Jornada": "Adoção",
+      "MRR": 3500.00,
+      "Vertical": "Fintech",
+      "Prioridade": "Alta",
+      "Cidade": "São Paulo",
+      "UF": "SP",
+      "Engajamento": "Alto",
+      "Satisfação Percebida": "Promotor",
+      "Tempo de Contrato": "12 meses",
+      "Inadimplência": "Não"
+    },
+    {
+      "Domínio": "acmetecnologia.com",
+      "Razão Social": "ACME Soluções Digitais S/A",
+      "Responsável": "Mariana Santos",
+      "Health Score": "Em Alerta",
+      "Jornada": "Onboarding",
+      "MRR": 1850.50,
+      "Vertical": "Tecnologia",
+      "Prioridade": "Média",
+      "Cidade": "Curitiba",
+      "UF": "PR",
+      "Engajamento": "Médio",
+      "Satisfação Percebida": "Neutro",
+      "Tempo de Contrato": "6 meses",
+      "Inadimplência": "Não"
+    },
+    {
+      "Domínio": "logisticaexpress.com.br",
+      "Razão Social": "Express Transportes e Logística Ltda",
+      "Responsável": "Carlos Silva",
+      "Health Score": "Em Risco",
+      "Jornada": "Renovação",
+      "MRR": 5200.00,
+      "Vertical": "Logística",
+      "Prioridade": "Alta",
+      "Cidade": "Rio de Janeiro",
+      "UF": "RJ",
+      "Engajamento": "Baixo",
+      "Satisfação Percebida": "Detrator",
+      "Tempo de Contrato": "24 meses",
+      "Inadimplência": "Sim"
+    }
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(sampleData);
+  const colWidths = [
+    { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 16 }, { wch: 15 },
+    { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 6 },
+    { wch: 14 }, { wch: 22 }, { wch: 18 }, { wch: 14 }
+  ];
+  ws['!cols'] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Modelo_Clientes");
+
+  if (format === 'csv') {
+    XLSX.writeFile(wb, "modelo_importacao_clientes.csv", { bookType: "csv" });
+  } else {
+    XLSX.writeFile(wb, "modelo_importacao_clientes.xlsx", { bookType: "xlsx" });
+  }
+  toast("Planilha modelo baixada!");
+}
+
+function exportCarteiraXlsx() {
+  if (!clientesCache || clientesCache.length === 0) {
+    return toast('Não há clientes na carteira para exportar.', true);
+  }
+
+  const exportData = clientesCache.map(c => ({
+    "Domínio": c.dominio || '',
+    "Razão Social": c.razao_social || '',
+    "Responsável": c.responsavel || '',
+    "Health Score": c.health_score || '',
+    "Jornada": c.jornada || '',
+    "MRR": Number(c.mrr) || 0,
+    "Vertical": c.vertical || '',
+    "Prioridade": c.prioridade || '',
+    "Cidade": c.cidade || '',
+    "UF": c.uf || '',
+    "Engajamento": c.engajamento || '',
+    "Satisfação Percebida": c.satisfacao_percebida || '',
+    "Tempo de Contrato": c.tempo_contrato || '',
+    "Inadimplência": c.inadimplencia || 'Não',
+    "Última Atividade": c.ultima_atividade || ''
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const colWidths = [
+    { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 16 }, { wch: 15 },
+    { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 6 },
+    { wch: 14 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 16 }
+  ];
+  ws['!cols'] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Carteira");
+  
+  const today = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `carteira_clientes_${today}.xlsx`);
+  toast('Carteira exportada com sucesso!');
 }
 </script>
 </body>
