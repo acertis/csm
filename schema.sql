@@ -1,12 +1,12 @@
 -- ============================================================
---  CS PLATFORM v2 — Schema para Supabase (Postgres)
+--  CS PLATFORM — Schema Completo para Supabase (Postgres)
 --  Cole isso em: Supabase > SQL Editor > New query > Run
 -- ============================================================
 
 create extension if not exists "pgcrypto";
 
 -- ------------------------------------------------------------
--- PERFIS (dados extras do usuário, ligado ao auth.users nativo do Supabase)
+-- PERFIS
 -- ------------------------------------------------------------
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -16,7 +16,7 @@ create table if not exists profiles (
 );
 
 -- ------------------------------------------------------------
--- CLIENTES (equivalente à aba "Informações" + "Segmentação da Carteira")
+-- CLIENTES (Módulo: Carteira de Clientes)
 -- ------------------------------------------------------------
 create table if not exists clientes (
   id uuid primary key default gen_random_uuid(),
@@ -24,25 +24,62 @@ create table if not exists clientes (
   razao_social text,
   nome_app text,
   responsavel text,
-  vertical text,
-  prioridade text,
+  cargo text,
+  contato text,
+  email text,
+  parceiro text,
+  vertical text default 'Fuel',
+  prioridade text default 'Média',
   cidade text,
   uf text,
   engajamento text,
   satisfacao_percebida text,
   health_score text check (health_score in ('Saudável','Em Alerta','Em Risco','Retenção de Churn') or health_score is null),
-  jornada text,
+  jornada text default 'Ongoing',
   mrr numeric default 0,
   tempo_contrato text,
   inadimplencia text default 'Não',
+  ticket_url text,
   ultima_atividade text,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
 
 -- ------------------------------------------------------------
--- CASOS CRÍTICOS (Gestão de Risco)
+-- WORKFLOWS & FLUXOS DE TRABALHO (Módulo: Workflows)
 -- ------------------------------------------------------------
+create table if not exists workflows (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid references clientes(id) on delete cascade,
+  titulo text not null,
+  tipo text default 'Onboarding', -- 'Onboarding', 'Caso Crítico', 'Adoção / Expansão', 'Renovação', 'Rotina'
+  etapa text not null default 'Parametrização & Criação do App', -- 'Acompanhamento Inicial', 'Parametrização & Criação do App', 'Validação & Testes', 'Virada de Chave / Go-Live', 'Acompanhamento Crítico', 'Concluído'
+  prioridade text default 'Média', -- 'Baixa', 'Média', 'Alta', 'Urgente'
+  responsavel text,
+  descricao text,
+  plano_de_acao text,
+  proximo_contato date,
+  ticket_url text,
+  status text default 'Em Andamento' check (status in ('Em Andamento','Bloqueado','Concluído')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- ------------------------------------------------------------
+-- ATIVIDADES & HISTÓRICO DE INTERAÇÕES
+-- ------------------------------------------------------------
+create table if not exists atividades (
+  id uuid primary key default gen_random_uuid(),
+  cliente_id uuid references clientes(id) on delete cascade,
+  workflow_id uuid references workflows(id) on delete set null,
+  tipo text not null, -- 'Follow-Up WhatsApp', 'Ligação / Contato', 'Reunião de Alinhamento', 'Treinamento', 'Virada de Chave', 'Visita Presencial', 'Check-In de Saúde', 'Outro'
+  observacao text,
+  data date default current_date,
+  responsavel_id uuid references auth.users(id),
+  created_at timestamptz default now()
+);
+
+-- Compatibilidade com tabelas legadas se existirem
 create table if not exists casos_criticos (
   id uuid primary key default gen_random_uuid(),
   cliente_id uuid references clientes(id) on delete cascade,
@@ -54,14 +91,10 @@ create table if not exists casos_criticos (
   proximo_contato date,
   ticket text,
   responsavel text,
-  status text default 'Aberto' check (status in ('Aberto','Resolvido')),
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  status text default 'Aberto',
+  created_at timestamptz default now()
 );
 
--- ------------------------------------------------------------
--- ONBOARDING (Kanban)
--- ------------------------------------------------------------
 create table if not exists onboarding (
   id uuid primary key default gen_random_uuid(),
   cliente_id uuid references clientes(id) on delete cascade,
@@ -69,20 +102,6 @@ create table if not exists onboarding (
   situacao text default 'Integração de Contrato',
   observacao text,
   ticket text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
--- ------------------------------------------------------------
--- ATIVIDADES (log de contatos/reuniões — alimenta os indicadores do Dashboard)
--- ------------------------------------------------------------
-create table if not exists atividades (
-  id uuid primary key default gen_random_uuid(),
-  cliente_id uuid references clientes(id) on delete cascade,
-  tipo text not null, -- ex: 'Aguardando Contato','Follow-Up','Reunião Agendada','Reunião Realizada','Treinamento','Visita Presencial'...
-  observacao text,
-  data date default current_date,
-  responsavel_id uuid references auth.users(id),
   created_at timestamptz default now()
 );
 
@@ -97,56 +116,28 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists trg_clientes_updated on clientes;
 create trigger trg_clientes_updated before update on clientes
   for each row execute function set_updated_at();
-create trigger trg_casos_updated before update on casos_criticos
-  for each row execute function set_updated_at();
-create trigger trg_onboarding_updated before update on onboarding
+
+drop trigger if exists trg_workflows_updated on workflows;
+create trigger trg_workflows_updated before update on workflows
   for each row execute function set_updated_at();
 
 -- ------------------------------------------------------------
--- ROW LEVEL SECURITY — por enquanto: qualquer usuário logado
--- pode ler e escrever (login simples, sem níveis de permissão ainda)
+-- ROW LEVEL SECURITY (RLS)
 -- ------------------------------------------------------------
 alter table profiles enable row level security;
 alter table clientes enable row level security;
+alter table workflows enable row level security;
+alter table atividades enable row level security;
 alter table casos_criticos enable row level security;
 alter table onboarding enable row level security;
-alter table atividades enable row level security;
 
-create policy "logados podem ler perfis" on profiles for select using (auth.role() = 'authenticated');
-create policy "usuário edita o próprio perfil" on profiles for update using (auth.uid() = id);
-create policy "novo usuário cria o próprio perfil" on profiles for insert with check (auth.uid() = id);
-
-create policy "logados podem ler clientes" on clientes for select using (auth.role() = 'authenticated');
-create policy "logados podem inserir clientes" on clientes for insert with check (auth.role() = 'authenticated');
-create policy "logados podem editar clientes" on clientes for update using (auth.role() = 'authenticated');
-create policy "logados podem apagar clientes" on clientes for delete using (auth.role() = 'authenticated');
-
-create policy "logados podem ler casos" on casos_criticos for select using (auth.role() = 'authenticated');
-create policy "logados podem inserir casos" on casos_criticos for insert with check (auth.role() = 'authenticated');
-create policy "logados podem editar casos" on casos_criticos for update using (auth.role() = 'authenticated');
-create policy "logados podem apagar casos" on casos_criticos for delete using (auth.role() = 'authenticated');
-
-create policy "logados podem ler onboarding" on onboarding for select using (auth.role() = 'authenticated');
-create policy "logados podem inserir onboarding" on onboarding for insert with check (auth.role() = 'authenticated');
-create policy "logados podem editar onboarding" on onboarding for update using (auth.role() = 'authenticated');
-create policy "logados podem apagar onboarding" on onboarding for delete using (auth.role() = 'authenticated');
-
-create policy "logados podem ler atividades" on atividades for select using (auth.role() = 'authenticated');
-create policy "logados podem inserir atividades" on atividades for insert with check (auth.role() = 'authenticated');
-
--- ------------------------------------------------------------
--- Cria o perfil automaticamente quando um usuário se registra
--- ------------------------------------------------------------
-create or replace function handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, nome) values (new.id, new.email);
-  return new;
-end;
-$$ language plpgsql security definer;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function handle_new_user();
+-- Políticas para usuários autenticados
+create policy "profiles_all_auth" on profiles for all to authenticated using (true) with check (true);
+create policy "clientes_all_auth" on clientes for all to authenticated using (true) with check (true);
+create policy "workflows_all_auth" on workflows for all to authenticated using (true) with check (true);
+create policy "atividades_all_auth" on atividades for all to authenticated using (true) with check (true);
+create policy "casos_all_auth" on casos_criticos for all to authenticated using (true) with check (true);
+create policy "onboarding_all_auth" on onboarding for all to authenticated using (true) with check (true);

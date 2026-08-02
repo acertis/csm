@@ -2,196 +2,323 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>CS Platform</title>
+<title>CS Platform — Cibus</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script>
-  tailwind.config = { theme: { extend: {
-    fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] },
-    colors: { brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'} },
-    boxShadow: { card: '0 1px 2px 0 rgba(15,23,42,0.04), 0 1px 3px 0 rgba(15,23,42,0.06)' }
-  } } }
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] },
+        colors: {
+          brand: { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' }
+        },
+        boxShadow: {
+          card: '0 1px 3px 0 rgba(15,23,42,0.06), 0 1px 2px 0 rgba(15,23,42,0.04)',
+          premium: '0 10px 25px -5px rgba(15,23,42,0.06), 0 8px 10px -6px rgba(15,23,42,0.03)'
+        }
+      }
+    }
+  }
 </script>
 <style>
-  body { background:#f4f5f7; }
-  ::-webkit-scrollbar { width:8px; height:8px; }
-  ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:8px; }
+  body { background:#f4f5f7; font-feature-settings: "cv02","cv03","cv04","cv11"; }
+  ::-webkit-scrollbar { width:7px; height:7px; }
+  ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover { background:#94a3b8; }
   .nav-item.active { background:#eef2ff; color:#4338ca; font-weight:600; }
   .nav-item.active .nav-icon { color:#4f46e5; }
   .view { display:none; }
-  .view.active { display:block; animation: fadeIn .25s ease; }
-  @keyframes fadeIn { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
-  .kanban-col { min-width: 300px; }
-  .modal-backdrop { background:rgba(15,23,42,.45); backdrop-filter: blur(2px); }
+  .view.active { display:block; animation: fadeIn .2s ease-out; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:translateY(0);} }
+  .kanban-col { min-width: 320px; width: 320px; }
+  .modal-backdrop { background:rgba(15,23,42,.55); backdrop-filter: blur(3px); }
 </style>
 </head>
 <body class="text-slate-800 antialiased">
 
 <!-- ============ CONFIG SUPABASE ============ -->
 <script>
-  // 🔧 Troque pelos dados do SEU projeto Supabase (Project Settings > API)
   const SUPABASE_URL = 'https://flbxiwbojltbpbdayjtg.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsYnhpd2Jvamx0YnBiZGF5anRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MTgyMTUsImV4cCI6MjEwMTE5NDIxNX0.McxXlY7QMc8nDt1i9NAvNCrcibdakoeeqZoT6DqGGu4';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 
 <!-- ============ TELA DE LOGIN ============ -->
-<div id="authScreen" class="min-h-screen flex items-center justify-center px-4">
+<div id="authScreen" class="min-h-screen flex items-center justify-center px-4 bg-slate-50">
   <div class="w-full max-w-sm bg-white rounded-2xl shadow-card border border-slate-100 p-8">
-    <div class="flex items-center gap-2 mb-6">
-      <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm">CS</div>
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-base shadow-sm">CS</div>
       <div>
-        <p class="font-bold text-slate-900 leading-none text-sm">CS Platform</p>
-        <p class="text-[11px] text-slate-400 leading-none mt-1">Customer Success</p>
+        <p class="font-bold text-slate-900 leading-none text-base">CS Platform</p>
+        <p class="text-xs text-slate-400 leading-none mt-1">Cibus · Customer Success</p>
       </div>
     </div>
     <h1 id="authTitle" class="text-lg font-bold text-slate-900 mb-1">Entrar</h1>
     <p class="text-xs text-slate-400 mb-5">Acesse com seu e-mail e senha da equipe.</p>
 
-    <form id="authForm" class="space-y-3">
+    <form id="authForm" class="space-y-3.5">
       <div>
-        <label class="text-xs font-medium text-slate-500">E-mail</label>
-        <input id="authEmail" type="email" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
+        <label class="text-xs font-medium text-slate-600">E-mail</label>
+        <input id="authEmail" type="email" required placeholder="seu@email.com" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500">
       </div>
       <div>
-        <label class="text-xs font-medium text-slate-500">Senha</label>
-        <input id="authPassword" type="password" required minlength="6" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
+        <label class="text-xs font-medium text-slate-600">Senha</label>
+        <input id="authPassword" type="password" required minlength="6" placeholder="••••••••" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-500">
       </div>
       <p id="authError" class="text-xs text-red-600 hidden"></p>
-      <button type="submit" id="authSubmitBtn" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded-lg transition">Entrar</button>
+      <button type="submit" id="authSubmitBtn" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded-lg shadow-sm transition">Entrar</button>
     </form>
 
-    <p class="text-xs text-slate-400 text-center mt-4">
+    <p class="text-xs text-slate-400 text-center mt-5">
       <span id="authToggleText">Ainda não tem conta?</span>
-      <button id="authToggleBtn" class="text-brand-600 font-medium hover:underline">Criar conta</button>
+      <button id="authToggleBtn" class="text-brand-600 font-medium hover:underline ml-1">Criar conta</button>
     </p>
   </div>
 </div>
 
-<!-- ============ APP (SPA) ============ -->
-<div id="appScreen" class="hidden flex h-screen overflow-hidden">
-  <aside class="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col">
-    <div class="h-16 flex items-center gap-2 px-6 border-b border-slate-100">
-      <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm">CS</div>
+<!-- ============ APP MODULAR (SPA) ============ -->
+<div id="appScreen" class="hidden flex h-screen overflow-hidden bg-slate-50/50">
+  <!-- SIDEBAR -->
+  <aside class="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col z-20">
+    <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-100">
+      <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">CS</div>
       <div>
         <p class="font-bold text-slate-900 leading-none text-sm">CS Platform</p>
-        <p class="text-[11px] text-slate-400 leading-none mt-1">Customer Success</p>
+        <p class="text-[11px] text-slate-400 leading-none mt-1">Gestão de Carteira & Workflows</p>
       </div>
     </div>
-    <nav class="flex-1 px-3 py-4 space-y-1">
-      <button data-view="dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
+    <nav class="flex-1 px-3 py-4 space-y-1.5">
+      <button data-view="dashboard" class="nav-item active w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">
         <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
         Dashboard
       </button>
-      <button data-view="carteira" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
+
+      <button data-view="carteira" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">
         <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         Carteira de Clientes
+        <span id="sidebarClientCount" class="ml-auto text-[11px] font-mono px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">0</span>
       </button>
-      <button data-view="onboarding" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
+
+      <button data-view="workflows" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition">
         <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
-        Onboarding
-      </button>
-      <button data-view="risco" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
-        <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-        Gestão de Risco
+        Workflows & Fluxos
+        <span id="sidebarWorkflowCount" class="ml-auto text-[11px] font-mono px-2 py-0.5 bg-brand-50 text-brand-600 rounded-full font-medium">0</span>
       </button>
     </nav>
-    <div class="p-3 border-t border-slate-100 space-y-1">
-      <p id="userEmail" class="text-[11px] text-slate-400 px-3 truncate"></p>
+
+    <div class="p-3 border-t border-slate-100 space-y-1.5">
+      <div class="px-3 py-1">
+        <p class="text-[11px] text-slate-400 leading-tight truncate" id="userEmail"></p>
+        <p class="text-[10px] text-emerald-600 font-medium flex items-center gap-1 mt-0.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span> Conectado ao Supabase
+        </p>
+      </div>
       <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-xs font-medium text-slate-500 hover:text-red-600 py-2 rounded-lg hover:bg-slate-50 transition">Sair</button>
     </div>
   </aside>
 
-  <main class="flex-1 overflow-y-auto">
-    <header class="h-16 bg-white/80 backdrop-blur border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
-      <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Dashboard</h1>
-      <div id="headerActions"></div>
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 overflow-y-auto flex flex-col">
+    <!-- HEADER -->
+    <header class="h-16 bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Dashboard</h1>
+      </div>
+      <div id="headerActions" class="flex items-center gap-2.5"></div>
     </header>
 
-    <div class="p-8 max-w-[1400px] mx-auto">
+    <!-- CONTENT WRAPPER -->
+    <div class="p-8 max-w-[1440px] w-full mx-auto space-y-6">
 
-      <!-- DASHBOARD -->
-      <section id="view-dashboard" class="view active">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6" id="kpiCards"></div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div class="lg:col-span-1 bg-white rounded-2xl shadow-card border border-slate-100 p-6">
-            <h3 class="font-semibold text-slate-800 mb-4 text-sm">Distribuição de Health Score</h3>
-            <canvas id="healthChart" height="220"></canvas>
-            <div id="healthLegend" class="mt-4 space-y-2 text-xs"></div>
-          </div>
-          <div class="lg:col-span-2 bg-white rounded-2xl shadow-card border border-slate-100 p-6">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-slate-800 text-sm">Atividades registradas (últimos 30 dias)</h3>
-              <button onclick="openAtividadeModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg transition">+ Registrar atividade</button>
+      <!-- ============================================================ -->
+      <!-- VIEW: DASHBOARD -->
+      <!-- ============================================================ -->
+      <section id="view-dashboard" class="view active space-y-6">
+        <!-- KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4" id="kpiCards"></div>
+
+        <!-- DASHBOARD GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <!-- HEALTH SCORE CHART (4 cols) -->
+          <div class="lg:col-span-4 bg-white rounded-2xl shadow-card border border-slate-100 p-6 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 text-sm">Saúde da Carteira</h3>
+                <span class="text-xs text-slate-400">Health Score</span>
+              </div>
+              <div class="relative flex items-center justify-center my-2">
+                <canvas id="healthChart" height="200"></canvas>
+              </div>
             </div>
-            <div id="atividadesList" class="space-y-3"></div>
+            <div id="healthLegend" class="mt-4 space-y-2 text-xs border-t border-slate-50 pt-4"></div>
+          </div>
+
+          <!-- ROTINAS SEMANAIS DO CSM (4 cols) -->
+          <div class="lg:col-span-4 bg-white rounded-2xl shadow-card border border-slate-100 p-6 flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm">Rotinas Operacionais do CSM</h3>
+                <p class="text-[11px] text-slate-400">Rituais e tarefas da semana</p>
+              </div>
+              <button onclick="resetRotinasSemanais()" title="Resetar checklist para a nova semana" class="text-xs font-medium text-slate-400 hover:text-brand-600 transition">Resetar</button>
+            </div>
+
+            <!-- PROGRESS BAR -->
+            <div class="mb-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div class="flex items-center justify-between text-xs mb-1.5 font-medium text-slate-600">
+                <span>Progresso semanal</span>
+                <span id="rotinasProgressLabel" class="font-mono font-bold text-brand-600">0%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div id="rotinasProgressBar" class="h-full bg-brand-600 rounded-full transition-all duration-300" style="width:0%"></div>
+              </div>
+            </div>
+
+            <!-- ROTINAS LIST -->
+            <div id="rotinasList" class="space-y-2 overflow-y-auto max-h-[290px] pr-1 flex-1 text-xs"></div>
+          </div>
+
+          <!-- ATIVIDADES RECENTES (4 cols) -->
+          <div class="lg:col-span-4 bg-white rounded-2xl shadow-card border border-slate-100 p-6 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-slate-800 text-sm">Últimas Atividades</h3>
+                <p class="text-[11px] text-slate-400">Histórico de atendimentos</p>
+              </div>
+              <button onclick="openAtividadeModal()" class="text-xs font-semibold bg-brand-50 hover:bg-brand-100 text-brand-700 px-2.5 py-1.5 rounded-lg transition">+ Registrar</button>
+            </div>
+            <div id="atividadesList" class="space-y-2.5 overflow-y-auto max-h-[340px] pr-1 flex-1 text-xs"></div>
           </div>
         </div>
       </section>
 
-      <!-- CARTEIRA -->
-      <section id="view-carteira" class="view">
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 gap-3">
-          <div class="relative flex-1 max-w-sm">
-            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input id="carteiraSearch" type="text" placeholder="Buscar por cliente, instância ou responsável..."
-              class="w-full pl-9 pr-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-white shadow-card focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
+      <!-- ============================================================ -->
+      <!-- VIEW: CARTEIRA DE CLIENTES -->
+      <!-- ============================================================ -->
+      <section id="view-carteira" class="view space-y-4">
+        <!-- TOOLBAR & MULTI-FILTERS -->
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 space-y-3">
+          <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+            <!-- BUSCA GLOBAL -->
+            <div class="relative flex-1 min-w-[280px]">
+              <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="carteiraSearch" type="text" placeholder="Buscar por instância, razão social, decisor, parceiro, cidade..."
+                class="w-full pl-10 pr-3.5 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400 transition">
+            </div>
+
+            <!-- AÇÕES DA CARTEIRA -->
+            <div class="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+              <button onclick="exportCarteiraXlsx()" title="Exportar base completa para Excel (.xlsx)"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3.5 py-2 rounded-xl shadow-sm transition">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Exportar
+              </button>
+              <button onclick="openImportModal()" title="Importar clientes via XLSX/CSV"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 px-3.5 py-2 rounded-xl shadow-sm transition">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Importar Planilha
+              </button>
+              <button onclick="openClienteModal()" class="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl shadow-sm transition whitespace-nowrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Novo Cliente
+              </button>
+            </div>
           </div>
-          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            <button onclick="exportCarteiraXlsx()" title="Exportar carteira atual para Excel (.xlsx)"
-              class="inline-flex items-center gap-1.5 text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-lg shadow-card transition">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar
-            </button>
-            <button onclick="openImportModal()" title="Importar planilha de clientes (.xlsx, .csv)"
-              class="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 px-3.5 py-2 rounded-lg shadow-card transition">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Importar Planilha
-            </button>
-            <button onclick="openClienteModal()" class="inline-flex items-center gap-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2 rounded-lg shadow-card transition whitespace-nowrap">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Novo Cliente
-            </button>
+
+          <!-- LINHA DE FILTROS ESPECÍFICOS -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100">
+            <div>
+              <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Health Score</label>
+              <select id="carteiraHealthFilter" class="w-full text-xs border border-slate-200 rounded-lg bg-white px-2.5 py-1.5 text-slate-600 focus:outline-none">
+                <option value="">Todos</option>
+                <option value="Saudável">Saudável</option>
+                <option value="Em Alerta">Em Alerta</option>
+                <option value="Em Risco">Em Risco</option>
+                <option value="Retenção de Churn">Retenção de Churn</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Jornada</label>
+              <select id="carteiraJornadaFilter" class="w-full text-xs border border-slate-200 rounded-lg bg-white px-2.5 py-1.5 text-slate-600 focus:outline-none">
+                <option value="">Todas</option>
+                <option value="Acompanhamento da Implantação">Implantação / Onboarding</option>
+                <option value="Ongoing">Ongoing</option>
+                <option value="Adoção">Adoção</option>
+                <option value="Renovação">Renovação</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Inadimplência</label>
+              <select id="carteiraInadFilter" class="w-full text-xs border border-slate-200 rounded-lg bg-white px-2.5 py-1.5 text-slate-600 focus:outline-none">
+                <option value="">Todos</option>
+                <option value="Não">Em dia (Não)</option>
+                <option value="Sim">Inadimplente (Sim)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Parceiro / Distribuidor</label>
+              <input id="carteiraParceiroFilter" type="text" placeholder="Ex: Adaptive, SS..." class="w-full text-xs border border-slate-200 rounded-lg bg-white px-2.5 py-1.5 text-slate-600 focus:outline-none">
+            </div>
           </div>
         </div>
+
+        <!-- TABELA DE CLIENTES -->
         <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide border-b border-slate-100">
-                  <th class="text-left font-semibold px-5 py-3">Cliente</th>
-                  <th class="text-left font-semibold px-5 py-3">Responsável</th>
-                  <th class="text-left font-semibold px-5 py-3">Health Score</th>
-                  <th class="text-left font-semibold px-5 py-3">Jornada</th>
-                  <th class="text-right font-semibold px-5 py-3">MRR</th>
-                  <th class="text-right font-semibold px-5 py-3">Ações</th>
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-50/90 text-slate-500 uppercase tracking-wider font-semibold border-b border-slate-100">
+                <tr>
+                  <th class="px-5 py-3.5">Instância & Empresa</th>
+                  <th class="px-5 py-3.5">Decisor / Cargo</th>
+                  <th class="px-5 py-3.5">Parceiro</th>
+                  <th class="px-5 py-3.5">Health Score</th>
+                  <th class="px-5 py-3.5">Jornada</th>
+                  <th class="px-5 py-3.5 text-right">MRR</th>
+                  <th class="px-5 py-3.5 text-center">Contato</th>
+                  <th class="px-5 py-3.5 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody id="carteiraBody" class="divide-y divide-slate-50"></tbody>
+              <tbody id="carteiraBody" class="divide-y divide-slate-50 font-normal"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- ONBOARDING -->
-      <section id="view-onboarding" class="view">
-        <div class="flex justify-end mb-4">
-          <button onclick="openOnboardingModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2.5 rounded-lg transition">+ Novo registro de Onboarding</button>
+      <!-- ============================================================ -->
+      <!-- VIEW: WORKFLOWS & FLUXOS DE TRABALHO (KANBAN) -->
+      <!-- ============================================================ -->
+      <section id="view-workflows" class="view space-y-4">
+        <!-- WORKFLOW HEADER & FILTERS -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-card">
+          <div>
+            <h2 class="font-bold text-slate-900 text-base">Workflows & Operações de CS</h2>
+            <p class="text-xs text-slate-400">Gerencie fluxos de Onboarding, Casos Críticos e Retenções em cada etapa.</p>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <select id="wfTipoFilter" class="text-xs border border-slate-200 rounded-xl bg-slate-50 px-3 py-2 text-slate-600 focus:outline-none">
+              <option value="">Tipo: Todos</option>
+              <option value="Onboarding">Onboarding</option>
+              <option value="Caso Crítico">Caso Crítico</option>
+              <option value="Adoção / Expansão">Adoção / Expansão</option>
+              <option value="Renovação">Renovação</option>
+            </select>
+            <button onclick="openWorkflowModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl shadow-sm transition whitespace-nowrap">
+              + Novo Card de Fluxo
+            </button>
+          </div>
         </div>
-        <div id="kanbanBoard" class="flex gap-5 overflow-x-auto pb-4"></div>
-      </section>
 
-      <!-- RISCO -->
-      <section id="view-risco" class="view">
-        <div class="flex justify-end mb-4">
-          <button onclick="openCasoModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2.5 rounded-lg transition">+ Novo Caso Crítico</button>
-        </div>
-        <div id="riscoList" class="space-y-4"></div>
+        <!-- KANBAN BOARD -->
+        <div id="workflowKanban" class="flex gap-4 overflow-x-auto pb-4 pt-1"></div>
       </section>
 
     </div>
@@ -200,7 +327,7 @@
 
 <!-- ============ MODAL GENÉRICO ============ -->
 <div id="modalRoot" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop px-4">
-  <div id="modalCard" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"></div>
+  <div id="modalCard" class="bg-white rounded-2xl shadow-premium w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto transition-all"></div>
 </div>
 
 <script>
@@ -234,10 +361,9 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
     return;
   }
   if (isSignup) {
-    errEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar (se a confirmação estiver ativa) e faça login.';
+    errEl.textContent = 'Conta criada com sucesso! Faça login.';
     errEl.classList.remove('hidden');
-    errEl.classList.remove('text-red-600');
-    errEl.classList.add('text-green-600');
+    errEl.className = 'text-xs text-emerald-600';
   }
 });
 
@@ -259,64 +385,113 @@ sb.auth.onAuthStateChange((event, session) => {
 // ============================================================
 // NAVEGAÇÃO
 // ============================================================
-const titles = { dashboard:'Dashboard', carteira:'Carteira de Clientes', onboarding:'Kanban de Onboarding', risco:'Gestão de Risco' };
+const VIEW_TITLES = {
+  dashboard: 'Dashboard Executivo',
+  carteira: 'Carteira de Clientes',
+  workflows: 'Workflows & Fluxos de Trabalho'
+};
+
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('view-' + btn.dataset.view).classList.add('active');
-    document.getElementById('pageTitle').textContent = titles[btn.dataset.view];
+    document.getElementById('pageTitle').textContent = VIEW_TITLES[btn.dataset.view] || 'CS Platform';
   });
 });
 
 // ============================================================
-// HELPERS
+// HELPERS E UTILS
 // ============================================================
 const HEALTH_STYLES = {
-  'Saudável':          { dot:'#16a34a', bg:'bg-green-50',  text:'text-green-700',  chart:'#22c55e' },
-  'Em Alerta':         { dot:'#d97706', bg:'bg-amber-50',  text:'text-amber-700',  chart:'#f59e0b' },
-  'Em Risco':          { dot:'#dc2626', bg:'bg-red-50',    text:'text-red-700',    chart:'#ef4444' },
-  'Retenção de Churn': { dot:'#991b1b', bg:'bg-red-100',   text:'text-red-800',    chart:'#b91c1c' },
-  'Não avaliado':      { dot:'#94a3b8', bg:'bg-slate-100', text:'text-slate-500',  chart:'#cbd5e1' }
+  'Saudável':          { dot:'#16a34a', bg:'bg-emerald-50', text:'text-emerald-700', chart:'#10b981' },
+  'Em Alerta':         { dot:'#d97706', bg:'bg-amber-50',   text:'text-amber-700',   chart:'#f59e0b' },
+  'Em Risco':          { dot:'#dc2626', bg:'bg-red-50',     text:'text-red-700',     chart:'#ef4444' },
+  'Retenção de Churn': { dot:'#991b1b', bg:'bg-rose-100',  text:'text-rose-900',    chart:'#be123c' },
+  'Não avaliado':      { dot:'#94a3b8', bg:'bg-slate-100',  text:'text-slate-500',   chart:'#cbd5e1' }
 };
+
 function healthBadge(score) {
   const s = HEALTH_STYLES[score] || HEALTH_STYLES['Não avaliado'];
-  return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${s.bg} ${s.text}">
-            <span style="width:8px;height:8px;border-radius:99px;background:${s.dot};margin-right:6px;display:inline-block;"></span>${score || 'Não avaliado'}
+  return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium ${s.bg} ${s.text}">
+            <span style="width:6px;height:6px;border-radius:99px;background:${s.dot};margin-right:5px;display:inline-block;"></span>${score || 'Não avaliado'}
           </span>`;
 }
-function formatBRL(n) { return (n || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 }); }
-function closeModal() { document.getElementById('modalRoot').classList.add('hidden'); }
-function openModal(html, maxW = 'max-w-md') {
+
+function formatBRL(n) {
+  return (Number(n) || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 });
+}
+
+function cleanPhoneForWhatsApp(phone) {
+  if (!phone) return '';
+  const num = String(phone).replace(/\D/g, '');
+  if (!num) return '';
+  if (num.length <= 11) return '55' + num;
+  return num;
+}
+
+function closeModal() {
+  document.getElementById('modalRoot').classList.add('hidden');
+}
+
+function openModal(html, maxW = 'max-w-lg') {
   const card = document.getElementById('modalCard');
-  card.className = `bg-white rounded-2xl shadow-xl w-full ${maxW} p-6 max-h-[90vh] overflow-y-auto transition-all`;
+  card.className = `bg-white rounded-2xl shadow-premium w-full ${maxW} p-6 max-h-[90vh] overflow-y-auto transition-all`;
   card.innerHTML = html;
   document.getElementById('modalRoot').classList.remove('hidden');
 }
+
 function toast(msg, isError) {
   const el = document.createElement('div');
-  el.className = `fixed bottom-6 right-6 z-[60] px-4 py-3 rounded-lg shadow-lg text-sm text-white ${isError ? 'bg-red-600' : 'bg-slate-900'}`;
-  el.textContent = msg;
+  el.className = `fixed bottom-6 right-6 z-[60] px-4 py-3 rounded-xl shadow-lg text-xs font-medium text-white flex items-center gap-2 ${isError ? 'bg-red-600' : 'bg-slate-900'} transition-all`;
+  el.innerHTML = `<span>${isError ? '⚠️' : '✓'}</span> <span>${msg}</span>`;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+  setTimeout(() => el.remove(), 3500);
 }
 
 // ============================================================
-// DATA STATE
+// DATA STATE & LOADING
 // ============================================================
 let clientesCache = [];
+let workflowsCache = [];
 
 async function loadAll() {
-  await loadClientes();
-  await Promise.all([renderDashboard(), renderKanban(), renderRisco()]);
+  await Promise.all([loadClientes(), loadWorkflows()]);
+  renderDashboard();
+  renderRotinas();
 }
 
 async function loadClientes() {
   const { data, error } = await sb.from('clientes').select('*').order('razao_social');
   if (error) { toast(error.message, true); return; }
   clientesCache = data || [];
-  paintCarteira(clientesCache);
+  document.getElementById('sidebarClientCount').textContent = clientesCache.length;
+  applyCarteiraFilters();
+}
+
+async function loadWorkflows() {
+  // Try loading from workflows, fallback gracefully
+  const { data, error } = await sb.from('workflows').select('*, clientes(dominio,razao_social,responsavel,contato,cargo,parceiro,mrr,health_score)').order('created_at', { ascending: false });
+  if (!error && data) {
+    workflowsCache = data;
+  } else {
+    // If workflows table does not exist yet or empty, check onboarding/casos as fallback
+    const { data: onb } = await sb.from('onboarding').select('*, clientes(dominio,razao_social,responsavel,contato,cargo,parceiro,mrr,health_score)');
+    workflowsCache = (onb || []).map(o => ({
+      id: o.id,
+      cliente_id: o.cliente_id,
+      titulo: 'Onboarding: ' + (o.clientes ? o.clientes.razao_social : 'Cliente'),
+      tipo: 'Onboarding',
+      etapa: o.etapa || o.situacao || 'Parametrização & Criação do App',
+      descricao: o.observacao,
+      ticket_url: o.ticket,
+      status: 'Em Andamento',
+      clientes: o.clientes
+    }));
+  }
+  document.getElementById('sidebarWorkflowCount').textContent = workflowsCache.filter(w => w.status !== 'Concluído').length;
+  renderWorkflowKanban();
 }
 
 // ============================================================
@@ -327,490 +502,802 @@ let healthChartInstance = null;
 async function renderDashboard() {
   const totalClientes = clientesCache.length;
   const mrrTotal = clientesCache.reduce((s,c) => s + (Number(c.mrr) || 0), 0);
-
-  const { count: casosAbertos } = await sb.from('casos_criticos').select('*', { count:'exact', head:true }).eq('status','Aberto');
+  const fluxosAtivos = workflowsCache.filter(w => w.status !== 'Concluído').length;
+  const casosRisco = clientesCache.filter(c => c.health_score === 'Em Risco' || c.health_score === 'Retenção de Churn').length;
 
   const dist = { 'Saudável':0, 'Em Alerta':0, 'Em Risco':0, 'Retenção de Churn':0, 'Não avaliado':0 };
-  clientesCache.forEach(c => { dist[c.health_score && dist.hasOwnProperty(c.health_score) ? c.health_score : 'Não avaliado']++; });
+  clientesCache.forEach(c => {
+    dist[c.health_score && dist.hasOwnProperty(c.health_score) ? c.health_score : 'Não avaliado']++;
+  });
 
   const kpis = [
-    { label:'Total de Clientes', value: totalClientes, accent:'brand', icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z' },
-    { label:'MRR Total', value: formatBRL(mrrTotal), accent:'green', icon:'M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
-    { label:'Clientes em Risco', value: casosAbertos || 0, accent:'red', icon:'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z' },
-    { label:'Saudáveis', value: dist['Saudável'], accent:'emerald', icon:'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4 12 14.01l-3-3' }
+    { label:'Total de Clientes', value: totalClientes, desc: 'Instâncias cadastradas', accent:'brand', icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z' },
+    { label:'MRR Total', value: formatBRL(mrrTotal), desc: 'Receita recorrente', accent:'green', icon:'M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+    { label:'Contas Saudáveis', value: dist['Saudável'], desc: `${Math.round(dist['Saudável']/Math.max(totalClientes,1)*100)}% da carteira`, accent:'emerald', icon:'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4 12 14.01l-3-3' },
+    { label:'Contas em Risco', value: casosRisco, desc: 'Atenção e retenção', accent:'red', icon:'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z' },
+    { label:'Workflows Ativos', value: fluxosAtivos, desc: 'Em andamento', accent:'orange', icon:'M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M13 2v7h7' }
   ];
-  const accentMap = { brand:'bg-brand-50 text-brand-600', green:'bg-emerald-50 text-emerald-600', red:'bg-red-50 text-red-600', emerald:'bg-emerald-50 text-emerald-600' };
+
+  const accentMap = {
+    brand:'bg-brand-50 text-brand-600',
+    green:'bg-emerald-50 text-emerald-600',
+    red:'bg-red-50 text-red-600',
+    emerald:'bg-emerald-50 text-emerald-600',
+    orange:'bg-orange-50 text-orange-600'
+  };
+
   document.getElementById('kpiCards').innerHTML = kpis.map(k => `
-    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-xs font-medium text-slate-500">${k.label}</span>
-        <div class="w-8 h-8 rounded-lg ${accentMap[k.accent]} flex items-center justify-center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${k.icon}"/></svg>
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-4 flex flex-col justify-between">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">${k.label}</span>
+        <div class="w-7 h-7 rounded-lg ${accentMap[k.accent]} flex items-center justify-center shrink-0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${k.icon}"/></svg>
         </div>
       </div>
-      <p class="font-mono text-2xl font-bold text-slate-900">${k.value}</p>
+      <div>
+        <p class="font-mono text-xl font-bold text-slate-900">${k.value}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">${k.desc}</p>
+      </div>
     </div>`).join('');
 
+  // CHART
   const labels = Object.keys(dist).filter(k => dist[k] > 0);
   const values = labels.map(l => dist[l]);
   const colors = labels.map(l => HEALTH_STYLES[l].chart);
   const ctx = document.getElementById('healthChart').getContext('2d');
   if (healthChartInstance) healthChartInstance.destroy();
-  healthChartInstance = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0 }] }, options:{ plugins:{ legend:{ display:false } }, cutout:'68%' } });
+  healthChartInstance = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0 }] },
+    options:{ plugins:{ legend:{ display:false } }, cutout:'72%', responsive:true, maintainAspectRatio:false }
+  });
+
   document.getElementById('healthLegend').innerHTML = labels.map((l,i) => `
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between text-slate-600">
       <span class="flex items-center gap-2"><span style="width:8px;height:8px;border-radius:99px;display:inline-block;background:${colors[i]}"></span>${l}</span>
-      <span class="font-mono font-semibold">${values[i]}</span>
+      <span class="font-mono font-semibold text-slate-800">${values[i]} <span class="text-[10px] text-slate-400 font-normal">(${Math.round(values[i]/Math.max(totalClientes,1)*100)}%)</span></span>
     </div>`).join('');
 
-  const since = new Date(); since.setDate(since.getDate() - 30);
-  const { data: atividades } = await sb.from('atividades').select('tipo, data, clientes(razao_social,dominio)').gte('data', since.toISOString().slice(0,10)).order('data', { ascending:false }).limit(20);
-  document.getElementById('atividadesList').innerHTML = (atividades || []).map(a => `
-    <div class="flex items-center justify-between text-sm border-b border-slate-50 pb-2">
+  // ATIVIDADES
+  const { data: atividades } = await sb.from('atividades').select('tipo, observacao, data, clientes(razao_social,dominio)').order('data', { ascending:false }).limit(15);
+  
+  if (atividades && atividades.length > 0) {
+    document.getElementById('atividadesList').innerHTML = atividades.map(a => `
+      <div class="p-2.5 rounded-xl border border-slate-100 hover:border-brand-200 bg-slate-50/50 hover:bg-white transition flex items-start justify-between gap-2">
+        <div>
+          <p class="font-semibold text-slate-800">${a.tipo}</p>
+          <p class="text-[11px] text-brand-600 font-mono">${a.clientes ? a.clientes.dominio : '—'} <span class="text-slate-400 font-sans font-normal">· ${a.clientes ? a.clientes.razao_social : ''}</span></p>
+          ${a.observacao ? `<p class="text-[11px] text-slate-500 mt-1 line-clamp-1">${a.observacao}</p>` : ''}
+        </div>
+        <span class="text-[10px] font-mono text-slate-400 shrink-0">${a.data || ''}</span>
+      </div>`).join('');
+  } else {
+    document.getElementById('atividadesList').innerHTML = `
+      <div class="p-6 text-center text-slate-400">
+        <p class="text-xs">Nenhuma atividade recente.</p>
+        <button onclick="openAtividadeModal()" class="mt-2 text-xs font-semibold text-brand-600 hover:underline">+ Registrar atividade</button>
+      </div>`;
+  }
+}
+
+// ============================================================
+// ROTINAS OPERACIONAIS
+// ============================================================
+const DEFAULT_ROTINAS = [
+  { id: 'r1', item: 'Atualizar ficha cadastral e informações das instâncias', done: false },
+  { id: 'r2', item: 'Contato com contas críticas e acompanhamento do plano de ação', done: false },
+  { id: 'r3', item: 'Acompanhamento diário dos fluxos de onboarding ativos', done: true },
+  { id: 'r4', item: 'Primeiro contato de CS com novas contas integradas', done: false },
+  { id: 'r5', item: 'Follow-up de alinhamento com os clientes prioritários', done: false },
+  { id: 'r6', item: 'Cobrança de solicitações e tickets abertos no Jira', done: true },
+  { id: 'r7', item: 'Análise de engajamento e calibração de cadência', done: false }
+];
+
+function getRotinas() {
+  try {
+    const saved = localStorage.getItem('csm_rotinas_v2');
+    return saved ? JSON.parse(saved) : DEFAULT_ROTINAS;
+  } catch (e) {
+    return DEFAULT_ROTINAS;
+  }
+}
+
+function saveRotinas(list) {
+  localStorage.setItem('csm_rotinas_v2', JSON.stringify(list));
+  renderRotinas();
+}
+
+function toggleRotina(id) {
+  const list = getRotinas();
+  const found = list.find(r => r.id === id);
+  if (found) {
+    found.done = !found.done;
+    saveRotinas(list);
+  }
+}
+
+function resetRotinasSemanais() {
+  if (confirm('Deseja desmarcar as rotinas para iniciar a nova semana?')) {
+    const list = getRotinas().map(r => ({ ...r, done: false }));
+    saveRotinas(list);
+    toast('Rotinas resetadas!');
+  }
+}
+
+function renderRotinas() {
+  const list = getRotinas();
+  const doneCount = list.filter(r => r.done).length;
+  const pct = Math.round((doneCount / Math.max(list.length, 1)) * 100);
+
+  document.getElementById('rotinasProgressBar').style.width = pct + '%';
+  document.getElementById('rotinasProgressLabel').textContent = `${doneCount}/${list.length} (${pct}%)`;
+
+  document.getElementById('rotinasList').innerHTML = list.map(r => `
+    <label class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition select-none group">
+      <input type="checkbox" ${r.done ? 'checked' : ''} onchange="toggleRotina('${r.id}')"
+        class="mt-0.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-4 h-4">
+      <span class="${r.done ? 'line-through text-slate-400' : 'text-slate-700 font-medium group-hover:text-slate-900'} leading-tight">
+        ${r.item}
+      </span>
+    </label>`).join('');
+}
+
+// ============================================================
+// MÓDULO 1: CARTEIRA DE CLIENTES
+// ============================================================
+function applyCarteiraFilters() {
+  const q = (document.getElementById('carteiraSearch').value || '').toLowerCase();
+  const health = document.getElementById('carteiraHealthFilter').value;
+  const jornada = document.getElementById('carteiraJornadaFilter').value;
+  const inad = document.getElementById('carteiraInadFilter').value;
+  const parceiro = (document.getElementById('carteiraParceiroFilter').value || '').toLowerCase();
+
+  const filtered = clientesCache.filter(c => {
+    const matchQ = !q || (c.razao_social||'').toLowerCase().includes(q) ||
+                          (c.dominio||'').toLowerCase().includes(q) ||
+                          (c.responsavel||'').toLowerCase().includes(q) ||
+                          (c.parceiro||'').toLowerCase().includes(q) ||
+                          (c.cidade||'').toLowerCase().includes(q);
+    const matchHealth = !health || c.health_score === health;
+    const matchJornada = !jornada || c.jornada === jornada;
+    const matchInad = !inad || c.inadimplencia === inad;
+    const matchParceiro = !parceiro || (c.parceiro||'').toLowerCase().includes(parceiro);
+
+    return matchQ && matchHealth && matchJornada && matchInad && matchParceiro;
+  });
+
+  paintCarteira(filtered);
+}
+
+document.getElementById('carteiraSearch').addEventListener('input', applyCarteiraFilters);
+document.getElementById('carteiraHealthFilter').addEventListener('change', applyCarteiraFilters);
+document.getElementById('carteiraJornadaFilter').addEventListener('change', applyCarteiraFilters);
+document.getElementById('carteiraInadFilter').addEventListener('change', applyCarteiraFilters);
+document.getElementById('carteiraParceiroFilter').addEventListener('input', applyCarteiraFilters);
+
+function paintCarteira(clientes) {
+  if (!clientes || clientes.length === 0) {
+    document.getElementById('carteiraBody').innerHTML = `
+      <tr><td colspan="8" class="px-5 py-12 text-center text-slate-400 text-xs">
+        Nenhum cliente encontrado com os filtros selecionados.
+        <button onclick="openClienteModal()" class="text-brand-600 font-semibold hover:underline ml-1">+ Novo Cliente</button> ou 
+        <button onclick="openImportModal()" class="text-brand-600 font-semibold hover:underline ml-1">Importar Planilha</button>
+      </td></tr>`;
+    return;
+  }
+
+  document.getElementById('carteiraBody').innerHTML = clientes.map(c => {
+    const wa = cleanPhoneForWhatsApp(c.contato);
+    return `
+      <tr class="hover:bg-slate-50/80 transition group">
+        <td class="px-5 py-3">
+          <div>
+            <p class="font-semibold text-slate-800 text-xs">${c.razao_social || c.dominio}</p>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="font-mono text-[11px] text-brand-600 font-medium">${c.dominio}</span>
+              ${c.nome_app ? `<span class="text-[10px] text-slate-400 font-normal">(${c.nome_app})</span>` : ''}
+              ${c.inadimplencia === 'Sim' ? `<span class="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded font-bold uppercase">Inadimplente</span>` : ''}
+            </div>
+          </div>
+        </td>
+        <td class="px-5 py-3">
+          <p class="text-slate-800 font-medium text-xs">${c.responsavel || '—'}</p>
+          <p class="text-[10px] text-slate-400">${c.cargo || 'Decisor'}</p>
+        </td>
+        <td class="px-5 py-3">
+          ${c.parceiro ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">${c.parceiro}</span>` : '<span class="text-slate-400 text-[11px]">—</span>'}
+        </td>
+        <td class="px-5 py-3">${healthBadge(c.health_score)}</td>
+        <td class="px-5 py-3 text-slate-600 text-[11px]">${c.jornada || 'Ongoing'}</td>
+        <td class="px-5 py-3 text-right font-mono font-semibold text-slate-800 text-xs">${formatBRL(c.mrr)}</td>
+        <td class="px-5 py-3 text-center">
+          <div class="inline-flex items-center gap-1.5">
+            ${wa ? `
+              <a href="https://wa.me/${wa}" target="_blank" title="WhatsApp: ${c.contato}" class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </a>` : '<span class="text-slate-300 text-xs">—</span>'}
+            ${c.ticket_url ? `
+              <a href="${c.ticket_url}" target="_blank" title="Ticket Jira / CRM" class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center transition">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </a>` : ''}
+          </div>
+        </td>
+        <td class="px-5 py-3 text-right">
+          <button onclick='openClienteModal(${JSON.stringify(c).replace(/'/g,"&apos;")})' class="text-xs font-semibold text-brand-600 hover:text-brand-800 transition px-2.5 py-1 rounded-lg hover:bg-brand-50">
+            Ficha 360°
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function openClienteModal(cliente) {
+  const c = cliente || {};
+  openModal(`
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
       <div>
-        <p class="text-slate-700 font-medium">${a.tipo}</p>
-        <p class="text-xs text-slate-400">${a.clientes ? (a.clientes.razao_social || a.clientes.dominio) : ''}</p>
+        <h3 class="font-bold text-slate-900 text-base">${c.id ? 'Ficha 360° do Cliente' : 'Novo Cadastro de Cliente'}</h3>
+        <p class="text-xs text-slate-400">${c.dominio ? c.dominio : 'Cadastre uma nova instância no sistema'}</p>
       </div>
-      <span class="text-xs text-slate-400 font-mono">${a.data}</span>
-    </div>`).join('') || '<p class="text-xs text-slate-400">Nenhuma atividade registrada nos últimos 30 dias.</p>';
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">✕</button>
+    </div>
+
+    <form id="clienteForm" class="space-y-4 text-xs">
+      <!-- 1. IDENTIFICAÇÃO -->
+      <div>
+        <p class="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-2">1. Identificação da Instância</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-medium text-slate-600">Instância * (Slug Único)</label>
+            <input id="cDominio" placeholder="ex: apdolago" value="${c.dominio||''}" ${c.id?'readonly':''} required class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 ${c.id?'bg-slate-50 font-mono text-slate-600':''}">
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">Razão Social</label>
+            <input id="cRazao" placeholder="Nome da empresa" value="${c.razao_social||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-2.5">
+          <div>
+            <label class="font-medium text-slate-600">Nome do App</label>
+            <input id="cNomeApp" placeholder="ex: Posto do Lago" value="${c.nome_app||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">Parceiro / Distribuidor</label>
+            <input id="cParceiro" placeholder="ex: Adaptive, PetroNordeste, SS" value="${c.parceiro||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CONTATOS -->
+      <div class="pt-2 border-t border-slate-100">
+        <p class="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-2">2. Decisor & Contato</p>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-medium text-slate-600">Decisor / Responsável</label>
+            <input id="cResp" placeholder="ex: Gabriela" value="${c.responsavel||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">Cargo</label>
+            <input id="cCargo" placeholder="ex: Dono/Sócio, Gerente" value="${c.cargo||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-2.5">
+          <div>
+            <label class="font-medium text-slate-600">WhatsApp / Telefone</label>
+            <input id="cContato" placeholder="(19) 99833-9600" value="${c.contato||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">E-mail</label>
+            <input id="cEmail" type="email" placeholder="contato@cliente.com" value="${c.email||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. SAÚDE & MÉTRICAS -->
+      <div class="pt-2 border-t border-slate-100">
+        <p class="font-bold uppercase tracking-wider text-[10px] text-slate-400 mb-2">3. Métricas & Indicadores</p>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="font-medium text-slate-600">Health Score</label>
+            <select id="cHealth" class="w-full mt-1 border border-slate-200 rounded-lg px-2.5 py-2">
+              <option value="" ${!c.health_score?'selected':''}>Não avaliado</option>
+              ${['Saudável','Em Alerta','Em Risco','Retenção de Churn'].map(h=>`<option ${c.health_score===h?'selected':''}>${h}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">Jornada</label>
+            <select id="cJornada" class="w-full mt-1 border border-slate-200 rounded-lg px-2.5 py-2">
+              ${['Acompanhamento da Implantação','Ongoing','Adoção','Renovação'].map(j=>`<option ${c.jornada===j?'selected':''}>${j}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">MRR (R$)</label>
+            <input id="cMrr" type="number" step="0.01" value="${c.mrr||0}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mt-2.5">
+          <div>
+            <label class="font-medium text-slate-600">Tempo de Contrato</label>
+            <input id="cTempo" placeholder="ex: 12 meses" value="${c.tempo_contrato||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">Inadimplência</label>
+            <select id="cInad" class="w-full mt-1 border border-slate-200 rounded-lg px-2.5 py-2">
+              <option value="Não" ${c.inadimplencia!=='Sim'?'selected':''}>Não</option>
+              <option value="Sim" ${c.inadimplencia==='Sim'?'selected':''}>Sim</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-medium text-slate-600">Ticket Jira (URL)</label>
+            <input id="cTicketUrl" placeholder="https://..." value="${c.ticket_url||''}" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-3 border-t border-slate-100">
+        <button type="button" onclick="closeModal()" class="flex-1 text-xs font-medium border border-slate-200 rounded-xl py-2.5 hover:bg-slate-50 transition">Cancelar</button>
+        <button type="submit" class="flex-1 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 shadow-sm transition">Salvar Ficha</button>
+      </div>
+    </form>`, 'max-w-xl');
+
+  document.getElementById('clienteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      dominio: document.getElementById('cDominio').value.trim().toLowerCase(),
+      razao_social: document.getElementById('cRazao').value.trim(),
+      nome_app: document.getElementById('cNomeApp').value.trim(),
+      responsavel: document.getElementById('cResp').value.trim(),
+      cargo: document.getElementById('cCargo').value.trim(),
+      contato: document.getElementById('cContato').value.trim(),
+      parceiro: document.getElementById('cParceiro').value.trim(),
+      email: document.getElementById('cEmail').value.trim(),
+      health_score: document.getElementById('cHealth').value || null,
+      jornada: document.getElementById('cJornada').value,
+      mrr: Number(document.getElementById('cMrr').value) || 0,
+      tempo_contrato: document.getElementById('cTempo').value.trim(),
+      inadimplencia: document.getElementById('cInad').value,
+      ticket_url: document.getElementById('cTicketUrl').value.trim()
+    };
+
+    const { error } = c.id
+      ? await sb.from('clientes').update(payload).eq('id', c.id)
+      : await sb.from('clientes').insert(payload);
+
+    if (error) return toast(error.message, true);
+    closeModal();
+    toast('Cliente salvo com sucesso!');
+    await loadClientes();
+    renderDashboard();
+  });
+}
+
+// ============================================================
+// MÓDULO 2: WORKFLOWS & OPERAÇÕES (KANBAN)
+// ============================================================
+const WORKFLOW_STAGES = [
+  'Acompanhamento Inicial',
+  'Parametrização & Criação do App',
+  'Validação & Testes',
+  'Virada de Chave / Go-Live',
+  'Acompanhamento Crítico',
+  'Concluído'
+];
+
+function renderWorkflowKanban() {
+  const tipo = document.getElementById('wfTipoFilter') ? document.getElementById('wfTipoFilter').value : '';
+  const columns = {};
+  WORKFLOW_STAGES.forEach(s => columns[s] = []);
+
+  workflowsCache.forEach(w => {
+    if (tipo && w.tipo !== tipo) return;
+    const stage = columns.hasOwnProperty(w.etapa) ? w.etapa : WORKFLOW_STAGES[1];
+    columns[stage].push(w);
+  });
+
+  const colColors = [
+    'border-t-brand-500',
+    'border-t-indigo-500',
+    'border-t-amber-500',
+    'border-t-emerald-500',
+    'border-t-red-500',
+    'border-t-slate-400'
+  ];
+
+  document.getElementById('workflowKanban').innerHTML = WORKFLOW_STAGES.map((stage, i) => `
+    <div class="kanban-col shrink-0 flex flex-col">
+      <div class="flex items-center justify-between mb-2.5 px-1">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide truncate" title="${stage}">${stage}</h3>
+        <span class="text-[11px] font-mono font-bold bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">${columns[stage].length}</span>
+      </div>
+      <div class="space-y-3 border-t-4 ${colColors[i % colColors.length]} bg-slate-100/60 rounded-2xl p-2.5 min-h-[350px] flex-1">
+        ${columns[stage].map(card => {
+          const dom = card.clientes ? card.clientes.dominio : (card.cliente_dominio || '—');
+          const razao = card.clientes ? card.clientes.razao_social : '—';
+          return `
+            <div onclick='openWorkflowDetailsModal("${card.id}")' class="bg-white rounded-xl shadow-card border border-slate-200/80 p-3.5 space-y-2 hover:shadow-md hover:border-brand-300 transition cursor-pointer group">
+              <div class="flex items-start justify-between gap-1">
+                <div>
+                  <span class="inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${card.tipo === 'Caso Crítico' ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-700'} mb-1">
+                    ${card.tipo || 'Workflow'}
+                  </span>
+                  <p class="font-bold text-slate-900 text-xs leading-snug">${card.titulo || razao}</p>
+                  <p class="font-mono text-[11px] text-brand-600 font-medium">${dom}</p>
+                </div>
+                ${card.ticket_url ? `
+                  <a href="${card.ticket_url}" target="_blank" onclick="event.stopPropagation()" title="Ver Ticket Jira" class="w-5 h-5 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center justify-center text-[10px] shrink-0">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  </a>` : ''}
+              </div>
+
+              ${card.descricao ? `
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-100 text-[11px] text-slate-600 leading-snug line-clamp-3">
+                  ${card.descricao}
+                </div>` : ''}
+
+              <div class="pt-1.5 flex items-center justify-between gap-2 border-t border-slate-50">
+                <select onclick="event.stopPropagation()" onchange="moveWorkflowStage('${card.id}', this.value)" class="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 w-full focus:outline-none">
+                  ${WORKFLOW_STAGES.map(s => `<option value="${s}" ${s === stage ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+              </div>
+            </div>`;
+        }).join('')}
+        ${columns[stage].length === 0 ? '<p class="text-center text-slate-400 text-[11px] py-12">Nenhum fluxo nesta etapa</p>' : ''}
+      </div>
+    </div>`).join('');
+}
+
+document.getElementById('wfTipoFilter').addEventListener('change', renderWorkflowKanban);
+
+async function moveWorkflowStage(id, etapa) {
+  const { error } = await sb.from('workflows').update({ etapa, status: etapa === 'Concluído' ? 'Concluído' : 'Em Andamento' }).eq('id', id);
+  if (error) {
+    // Fallback onboarding
+    await sb.from('onboarding').update({ etapa, situacao: etapa }).eq('id', id);
+  }
+  toast('Etapa do fluxo atualizada.');
+  await loadWorkflows();
+}
+
+async function openWorkflowDetailsModal(workflowId) {
+  const card = workflowsCache.find(w => w.id === workflowId);
+  if (!card) return;
+
+  const dom = card.clientes ? card.clientes.dominio : (card.cliente_dominio || '—');
+  const razao = card.clientes ? card.clientes.razao_social : '—';
+  const c = card.clientes || {};
+  const wa = cleanPhoneForWhatsApp(c.contato);
+
+  // Carregar atividades desse fluxo/cliente
+  const { data: ativs } = await sb.from('atividades').select('*').eq('cliente_id', card.cliente_id).order('created_at', { ascending: false });
+
+  openModal(`
+    <div class="flex items-start justify-between pb-3 border-b border-slate-100 mb-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${card.tipo === 'Caso Crítico' ? 'bg-red-100 text-red-700' : 'bg-brand-100 text-brand-700'}">
+            ${card.tipo || 'Workflow'}
+          </span>
+          <span class="text-xs text-slate-400">ID: ${card.id.slice(0,8)}</span>
+        </div>
+        <h3 class="font-bold text-slate-900 text-base">${card.titulo || razao}</h3>
+        <p class="text-xs text-slate-500 font-mono">${dom} <span class="font-sans text-slate-400">· ${razao}</span></p>
+      </div>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">✕</button>
+    </div>
+
+    <!-- DADOS DO CLIENTE & ETAPA -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs mb-4">
+      <div>
+        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Etapa Atual</span>
+        <span class="font-semibold text-slate-800">${card.etapa}</span>
+      </div>
+      <div>
+        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Responsável</span>
+        <span class="font-medium text-slate-700">${c.responsavel || 'CS Cibus'}</span>
+      </div>
+      <div>
+        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Health Score</span>
+        <span class="font-medium text-slate-700">${c.health_score || 'Não avaliado'}</span>
+      </div>
+      <div>
+        <span class="text-[10px] uppercase text-slate-400 font-semibold block">Contato Rápido</span>
+        ${wa ? `<a href="https://wa.me/${wa}" target="_blank" class="text-emerald-600 font-semibold hover:underline flex items-center gap-1">WhatsApp</a>` : '<span class="text-slate-400">—</span>'}
+      </div>
+    </div>
+
+    <!-- DETALHES / DIAGNÓSTICO -->
+    ${card.descricao ? `
+      <div class="mb-4">
+        <h4 class="text-xs font-bold text-slate-700 mb-1">Diagnóstico / Descrição do Fluxo</h4>
+        <p class="text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-200 leading-relaxed">${card.descricao}</p>
+      </div>` : ''}
+
+    ${card.plano_de_acao ? `
+      <div class="mb-4">
+        <h4 class="text-xs font-bold text-indigo-700 mb-1">Plano de Ação Estruturado</h4>
+        <p class="text-xs text-slate-800 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 leading-relaxed font-medium">${card.plano_de_acao}</p>
+      </div>` : ''}
+
+    <!-- FORMULÁRIO DE REGISTRO RÁPIDO DE ATIVIDADE -->
+    <div class="mb-4 pt-3 border-t border-slate-100">
+      <h4 class="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Registrar Nova Atividade no Fluxo
+      </h4>
+      <form id="cardAtividadeForm" class="space-y-2.5">
+        <div class="grid grid-cols-2 gap-2">
+          <select id="cardAtivTipo" required class="text-xs border border-slate-200 rounded-lg px-2.5 py-2 bg-white">
+            <option>Follow-Up WhatsApp</option>
+            <option>Ligação / Contato</option>
+            <option>Reunião de Alinhamento</option>
+            <option>Treinamento</option>
+            <option>Virada de Chave / Go-Live</option>
+            <option>Check-In de Saúde</option>
+          </select>
+          <input id="cardAtivObs" placeholder="Resumo do contato / alinhamento..." required class="text-xs border border-slate-200 rounded-lg px-2.5 py-2">
+        </div>
+        <button type="submit" class="w-full text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white py-2 rounded-lg transition shadow-sm">
+          + Salvar Atividade no Histórico
+        </button>
+      </form>
+    </div>
+
+    <!-- TIMELINE DE ATIVIDADES -->
+    <div class="pt-3 border-t border-slate-100">
+      <h4 class="text-xs font-bold text-slate-700 mb-2">Histórico & Linha do Tempo</h4>
+      <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+        ${(ativs && ativs.length > 0) ? ativs.map(a => `
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="font-semibold text-slate-800">${a.tipo}</span>
+              <span class="text-[10px] font-mono text-slate-400">${a.data || ''}</span>
+            </div>
+            <p class="text-slate-600">${a.observacao || '—'}</p>
+          </div>`).join('') : '<p class="text-slate-400 text-xs py-4 text-center">Nenhuma atividade registrada ainda para esta conta.</p>'}
+      </div>
+    </div>
+
+    <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+      <button onclick="closeModal()" class="text-xs font-medium border border-slate-200 px-4 py-2 rounded-xl">Fechar</button>
+      <button onclick="concluirWorkflow('${card.id}')" class="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition">
+        ✓ Concluir Fluxo
+      </button>
+    </div>`, 'max-w-xl');
+
+  document.getElementById('cardAtividadeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from('atividades').insert({
+      cliente_id: card.cliente_id,
+      workflow_id: card.id,
+      tipo: document.getElementById('cardAtivTipo').value,
+      observacao: document.getElementById('cardAtivObs').value.trim(),
+      responsavel_id: user ? user.id : null
+    });
+    if (error) return toast(error.message, true);
+    toast('Atividade registrada com sucesso!');
+    openWorkflowDetailsModal(card.id); // re-render
+    renderDashboard();
+  });
+}
+
+async function concluirWorkflow(id) {
+  const { error } = await sb.from('workflows').update({ etapa: 'Concluído', status: 'Concluído' }).eq('id', id);
+  if (error) {
+    await sb.from('onboarding').update({ etapa: 'Concluído', situacao: 'Concluído' }).eq('id', id);
+  }
+  closeModal();
+  toast('Fluxo marcado como Concluído!');
+  await loadWorkflows();
+}
+
+function openWorkflowModal() {
+  openModal(`
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h3 class="font-bold text-slate-900 text-base">Novo Card de Fluxo / Workflow</h3>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+    </div>
+    <form id="wfForm" class="space-y-3 text-xs">
+      <div>
+        <label class="font-medium text-slate-600">Cliente / Instância</label>
+        <select id="wfCliente" required class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio} (${c.dominio})</option>`).join('')}
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="font-medium text-slate-600">Tipo de Fluxo</label>
+          <select id="wfTipo" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+            <option>Onboarding</option>
+            <option>Caso Crítico</option>
+            <option>Adoção / Expansão</option>
+            <option>Renovação</option>
+          </select>
+        </div>
+        <div>
+          <label class="font-medium text-slate-600">Etapa Inicial</label>
+          <select id="wfEtapa" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+            ${WORKFLOW_STAGES.map(s => `<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="font-medium text-slate-600">Título do Card</label>
+        <input id="wfTitulo" placeholder="ex: Implantação App Posto do Lago" required class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+      </div>
+      <div>
+        <label class="font-medium text-slate-600">Diagnóstico / Descrição</label>
+        <textarea id="wfDesc" rows="2" placeholder="Objetivo, detalhes ou bloqueios atuais..." class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs"></textarea>
+      </div>
+      <div>
+        <label class="font-medium text-slate-600">Link do Ticket (Jira / CRM)</label>
+        <input id="wfTicket" placeholder="https://adaptivesoft.atlassian.net/browse/..." class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-xs">
+      </div>
+      <div class="flex gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal()" class="flex-1 text-xs font-medium border border-slate-200 rounded-xl py-2.5">Cancelar</button>
+        <button type="submit" class="flex-1 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5">Criar Card</button>
+      </div>
+    </form>`);
+
+  document.getElementById('wfForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      cliente_id: document.getElementById('wfCliente').value,
+      titulo: document.getElementById('wfTitulo').value.trim(),
+      tipo: document.getElementById('wfTipo').value,
+      etapa: document.getElementById('wfEtapa').value,
+      descricao: document.getElementById('wfDesc').value.trim(),
+      ticket_url: document.getElementById('wfTicket').value.trim(),
+      status: 'Em Andamento'
+    };
+
+    const { error } = await sb.from('workflows').insert(payload);
+    if (error) {
+      // Fallback to onboarding if workflows table is not run in supabase
+      await sb.from('onboarding').insert({
+        cliente_id: payload.cliente_id,
+        etapa: payload.etapa,
+        situacao: payload.etapa,
+        observacao: payload.descricao,
+        ticket: payload.ticket_url
+      });
+    }
+    closeModal();
+    toast('Card de fluxo criado com sucesso!');
+    await loadWorkflows();
+  });
 }
 
 function openAtividadeModal() {
   openModal(`
-    <h3 class="font-bold text-slate-900 mb-4">Registrar atividade</h3>
-    <form id="atividadeForm" class="space-y-3">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <h3 class="font-bold text-slate-900 text-base">Registrar Atividade de CS</h3>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+    </div>
+    <form id="atividadeForm" class="space-y-3 text-xs">
       <div>
-        <label class="text-xs font-medium text-slate-500">Cliente</label>
-        <select id="ativCliente" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
-          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio}</option>`).join('')}
+        <label class="font-medium text-slate-600">Cliente / Instância</label>
+        <select id="ativCliente" required class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio} (${c.dominio})</option>`).join('')}
         </select>
       </div>
       <div>
-        <label class="text-xs font-medium text-slate-500">Tipo de atividade</label>
-        <select id="ativTipo" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
-          <option>Aguardando Contato</option><option>Tentativa de Contato</option><option>Follow-Up</option>
-          <option>Reunião Agendada</option><option>Reunião Realizada</option><option>Reunião de Onboarding</option>
-          <option>Treinamento</option><option>Reunião de Check-In</option><option>Visita Presencial</option>
+        <label class="font-medium text-slate-600">Tipo de Atividade</label>
+        <select id="ativTipo" required class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2">
+          <option>Follow-Up WhatsApp</option>
+          <option>Ligação / Contato</option>
+          <option>Reunião de Alinhamento</option>
+          <option>Reunião de Onboarding</option>
+          <option>Treinamento</option>
+          <option>Visita Presencial</option>
+          <option>Check-In de Saúde</option>
         </select>
       </div>
       <div>
-        <label class="text-xs font-medium text-slate-500">Observação</label>
-        <textarea id="ativObs" rows="3" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea>
+        <label class="font-medium text-slate-600">Observações e Resumo</label>
+        <textarea id="ativObs" rows="3" placeholder="O que foi alinhado com o cliente..." class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2"></textarea>
       </div>
-      <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
-        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
+      <div class="flex gap-2 pt-2 border-t border-slate-100">
+        <button type="button" onclick="closeModal()" class="flex-1 text-xs font-medium border border-slate-200 rounded-xl py-2.5">Cancelar</button>
+        <button type="submit" class="flex-1 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5">Salvar Atividade</button>
       </div>
     </form>`);
+
   document.getElementById('atividadeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const { data: { user } } = await sb.auth.getUser();
     const { error } = await sb.from('atividades').insert({
       cliente_id: document.getElementById('ativCliente').value,
       tipo: document.getElementById('ativTipo').value,
-      observacao: document.getElementById('ativObs').value,
-      responsavel_id: user.id
+      observacao: document.getElementById('ativObs').value.trim(),
+      responsavel_id: user ? user.id : null
     });
     if (error) return toast(error.message, true);
-    closeModal(); toast('Atividade registrada.'); renderDashboard();
+    closeModal();
+    toast('Atividade registrada com sucesso!');
+    renderDashboard();
   });
 }
 
 // ============================================================
-// CARTEIRA DE CLIENTES
-// ============================================================
-function paintCarteira(clientes) {
-  document.getElementById('carteiraBody').innerHTML = clientes.map(c => `
-    <tr class="hover:bg-slate-50 transition">
-      <td class="px-5 py-3"><p class="font-medium text-slate-800">${c.razao_social || c.dominio}</p><p class="text-xs text-slate-400">${c.dominio}</p></td>
-      <td class="px-5 py-3 text-slate-600">${c.responsavel || '—'}</td>
-      <td class="px-5 py-3">${healthBadge(c.health_score)}</td>
-      <td class="px-5 py-3 text-slate-600">${c.jornada || '—'}</td>
-      <td class="px-5 py-3 text-right font-mono text-slate-800">${formatBRL(c.mrr)}</td>
-      <td class="px-5 py-3 text-right"><button onclick='openClienteModal(${JSON.stringify(c).replace(/'/g,"&apos;")})' class="text-xs font-medium text-brand-600 hover:underline">Editar</button></td>
-    </tr>`).join('') || `<tr><td colspan="6" class="px-5 py-10 text-center text-slate-400 text-sm">Nenhum cliente cadastrado ainda.</td></tr>`;
-}
-
-document.getElementById('carteiraSearch').addEventListener('input', (e) => {
-  const q = e.target.value.toLowerCase();
-  paintCarteira(clientesCache.filter(c => (c.razao_social||'').toLowerCase().includes(q) || (c.dominio||'').toLowerCase().includes(q) || (c.responsavel||'').toLowerCase().includes(q)));
-});
-
-function openClienteModal(cliente) {
-  const c = cliente || {};
-  openModal(`
-    <h3 class="font-bold text-slate-900 mb-4">${c.id ? 'Editar cliente' : 'Novo cliente'}</h3>
-    <form id="clienteForm" class="space-y-3">
-      <div><label class="text-xs font-medium text-slate-500">Instância * (Identificador Único)</label><input id="cDominio" placeholder="ex: apdolago" value="${c.dominio||''}" ${c.id?'readonly':''} required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 ${c.id?'bg-slate-50':''}"></div>
-      <div><label class="text-xs font-medium text-slate-500">Razão Social</label><input id="cRazao" value="${c.razao_social||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
-      <div><label class="text-xs font-medium text-slate-500">Responsável</label><input id="cResp" value="${c.responsavel||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
-      <div>
-        <label class="text-xs font-medium text-slate-500">Health Score</label>
-        <select id="cHealth" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
-          <option value="" ${!c.health_score?'selected':''}>Não avaliado</option>
-          ${['Saudável','Em Alerta','Em Risco','Retenção de Churn'].map(h=>`<option ${c.health_score===h?'selected':''}>${h}</option>`).join('')}
-        </select>
-      </div>
-      <div><label class="text-xs font-medium text-slate-500">Jornada do Cliente</label><input id="cJornada" value="${c.jornada||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
-      <div><label class="text-xs font-medium text-slate-500">MRR (R$)</label><input id="cMrr" type="number" step="0.01" value="${c.mrr||0}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
-      <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
-        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
-      </div>
-    </form>`);
-  document.getElementById('clienteForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-      dominio: document.getElementById('cDominio').value.trim(),
-      razao_social: document.getElementById('cRazao').value,
-      responsavel: document.getElementById('cResp').value,
-      health_score: document.getElementById('cHealth').value || null,
-      jornada: document.getElementById('cJornada').value,
-      mrr: Number(document.getElementById('cMrr').value) || 0
-    };
-    const { error } = c.id ? await sb.from('clientes').update(payload).eq('id', c.id) : await sb.from('clientes').insert(payload);
-    if (error) return toast(error.message, true);
-    closeModal(); toast('Cliente salvo.'); await loadClientes(); renderDashboard();
-  });
-}
-
-// ============================================================
-// ONBOARDING (KANBAN)
-// ============================================================
-async function renderKanban() {
-  const { data, error } = await sb.from('onboarding').select('*, clientes(dominio,razao_social)').order('created_at');
-  if (error) return toast(error.message, true);
-
-  const columns = {};
-  (data || []).forEach(r => {
-    const key = r.situacao || 'Sem Situação';
-    (columns[key] = columns[key] || []).push(r);
-  });
-  const preferred = ['Integração de Contrato','Em Implantação','Escalado','Concluído'];
-  const keys = Object.keys(columns).sort((a,b) => {
-    const ia = preferred.indexOf(a), ib = preferred.indexOf(b);
-    if (ia===-1 && ib===-1) return a.localeCompare(b);
-    if (ia===-1) return 1; if (ib===-1) return -1; return ia-ib;
-  });
-  const colColors = ['border-t-brand-400','border-t-amber-400','border-t-red-400','border-t-emerald-400'];
-
-  document.getElementById('kanbanBoard').innerHTML = keys.map((key,i) => `
-    <div class="kanban-col shrink-0 w-80">
-      <div class="flex items-center justify-between mb-3 px-1">
-        <h3 class="text-sm font-semibold text-slate-700">${key}</h3>
-        <span class="text-xs font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">${columns[key].length}</span>
-      </div>
-      <div class="space-y-3 border-t-4 ${colColors[i%colColors.length]} bg-slate-50/50 rounded-b-xl p-2 min-h-[120px]">
-        ${columns[key].map(card => `
-          <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4">
-            <p class="font-medium text-sm text-slate-800 mb-1">${card.clientes ? (card.clientes.razao_social || card.clientes.dominio) : '—'}</p>
-            <p class="text-xs text-slate-500 mb-2">${card.etapa || '—'}</p>
-            ${card.observacao ? `<p class="text-xs text-slate-400 mb-2 line-clamp-3">${card.observacao}</p>` : ''}
-            <select onchange="moveOnboarding('${card.id}', this.value)" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5">
-              ${preferred.map(p => `<option value="${p}" ${p===card.situacao?'selected':''}>${p}</option>`).join('')}
-            </select>
-          </div>`).join('')}
-      </div>
-    </div>`).join('');
-}
-
-async function moveOnboarding(id, situacao) {
-  const { error } = await sb.from('onboarding').update({ situacao }).eq('id', id);
-  if (error) return toast(error.message, true);
-  toast('Etapa atualizada.'); renderKanban();
-}
-
-function openOnboardingModal() {
-  openModal(`
-    <h3 class="font-bold text-slate-900 mb-4">Novo registro de Onboarding</h3>
-    <form id="onbForm" class="space-y-3">
-      <div>
-        <label class="text-xs font-medium text-slate-500">Cliente</label>
-        <select id="onbCliente" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
-          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio}</option>`).join('')}
-        </select>
-      </div>
-      <div><label class="text-xs font-medium text-slate-500">Etapa</label><input id="onbEtapa" value="Acompanhamento da Implantação" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
-      <div>
-        <label class="text-xs font-medium text-slate-500">Situação</label>
-        <select id="onbSituacao" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
-          <option>Integração de Contrato</option><option>Em Implantação</option><option>Escalado</option><option>Concluído</option>
-        </select>
-      </div>
-      <div><label class="text-xs font-medium text-slate-500">Observação</label><textarea id="onbObs" rows="3" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea></div>
-      <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
-        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
-      </div>
-    </form>`);
-  document.getElementById('onbForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const { error } = await sb.from('onboarding').insert({
-      cliente_id: document.getElementById('onbCliente').value,
-      etapa: document.getElementById('onbEtapa').value,
-      situacao: document.getElementById('onbSituacao').value,
-      observacao: document.getElementById('onbObs').value
-    });
-    if (error) return toast(error.message, true);
-    closeModal(); toast('Registro criado.'); renderKanban();
-  });
-}
-
-// ============================================================
-// GESTÃO DE RISCO
-// ============================================================
-async function renderRisco() {
-  const { data, error } = await sb.from('casos_criticos').select('*, clientes(dominio,razao_social)').eq('status','Aberto').order('created_at', { ascending:false });
-  if (error) return toast(error.message, true);
-
-  document.getElementById('riscoList').innerHTML = (data || []).map(c => `
-    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-6">
-      <div class="flex items-start justify-between gap-4 mb-3 flex-wrap">
-        <div>
-          <p class="font-semibold text-slate-900">${c.clientes ? (c.clientes.razao_social || c.clientes.dominio) : '—'}</p>
-          <p class="text-xs text-slate-400 mt-0.5">${c.tipo || ''} · Responsável: ${c.responsavel || '—'} · Parceiro: ${c.parceiro || '—'}</p>
-        </div>
-        <button onclick="resolveCaso('${c.id}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition">
-          <span style="width:6px;height:6px;border-radius:99px;background:#dc2626;display:inline-block;"></span>Marcar como resolvido
-        </button>
-      </div>
-      <p class="text-sm text-slate-600 mb-3">${c.situacao || ''}</p>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-        <div class="bg-slate-50 rounded-lg p-3"><p class="font-semibold text-slate-500 mb-1">Plano de Ação</p><p class="text-slate-700">${c.plano_de_acao || '—'}</p></div>
-        <div class="bg-slate-50 rounded-lg p-3"><p class="font-semibold text-slate-500 mb-1">Próximo Contato</p><p class="text-slate-700">${c.proximo_contato || '—'}</p></div>
-      </div>
-    </div>`).join('') || `<div class="text-center text-slate-400 text-sm py-10">Nenhum caso crítico em aberto 🎉</div>`;
-}
-
-async function resolveCaso(id) {
-  const { error } = await sb.from('casos_criticos').update({ status:'Resolvido' }).eq('id', id);
-  if (error) return toast(error.message, true);
-  toast('Caso marcado como resolvido.'); renderRisco(); renderDashboard();
-}
-
-function openCasoModal() {
-  openModal(`
-    <h3 class="font-bold text-slate-900 mb-4">Novo caso crítico</h3>
-    <form id="casoForm" class="space-y-3">
-      <div>
-        <label class="text-xs font-medium text-slate-500">Cliente</label>
-        <select id="csCliente" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
-          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio}</option>`).join('')}
-        </select>
-      </div>
-      <div><label class="text-xs font-medium text-slate-500">Tipo</label><input id="csTipo" placeholder="Ex: Implantação Atrasada" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
-      <div><label class="text-xs font-medium text-slate-500">Situação</label><textarea id="csSituacao" rows="2" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea></div>
-      <div><label class="text-xs font-medium text-slate-500">Plano de Ação</label><textarea id="csPlano" rows="2" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea></div>
-      <div><label class="text-xs font-medium text-slate-500">Próximo Contato</label><input id="csProximo" type="date" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
-      <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
-        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
-      </div>
-    </form>`);
-  document.getElementById('casoForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const { error } = await sb.from('casos_criticos').insert({
-      cliente_id: document.getElementById('csCliente').value,
-      tipo: document.getElementById('csTipo').value,
-      situacao: document.getElementById('csSituacao').value,
-      plano_de_acao: document.getElementById('csPlano').value,
-      proximo_contato: document.getElementById('csProximo').value || null
-    });
-    if (error) return toast(error.message, true);
-    closeModal(); toast('Caso registrado.'); renderRisco(); renderDashboard();
-  });
-}
-
-// ============================================================
-// IMPORTAÇÃO E EXPORTAÇÃO DE DADOS (XLSX / CSV)
+// IMPORTAÇÃO E EXPORTAÇÃO (XLSX / CSV)
 // ============================================================
 const DB_CLIENTE_FIELDS = [
-  { key: 'dominio', label: 'Instância * (Identificador Único)', required: true, aliases: ['dominio','domínio','instancia','instância','instance','slug','domain','site','url','app','nome do app'] },
-  { key: 'razao_social', label: 'Razão Social / Nome da Empresa', required: false, aliases: ['razao_social','razão social','razao social','nome','empresa','cliente','razao','company','nome da empresa','nome fantasia'] },
-  { key: 'responsavel', label: 'Responsável (CSM)', required: false, aliases: ['responsavel','responsável','cs','csm','gestor','owner','analista','responsavel cs','account manager'] },
-  { key: 'health_score', label: 'Health Score', required: false, aliases: ['health_score','health score','health','saude','saúde','status saude','status_saude'] },
-  { key: 'jornada', label: 'Jornada do Cliente', required: false, aliases: ['jornada','etapa','fase','estagio','stage','status jornada','jornada do cliente','lifecycle'] },
-  { key: 'mrr', label: 'MRR (R$)', required: false, aliases: ['mrr','receita','valor','faturamento','mensalidade','revenue','valor mensal','mrr atual'] },
-  { key: 'vertical', label: 'Vertical / Segmento', required: false, aliases: ['vertical','segmento','setor','ramo','area','industria'] },
-  { key: 'prioridade', label: 'Prioridade (Tier)', required: false, aliases: ['prioridade','priority','tier','faixa','classificacao'] },
-  { key: 'cidade', label: 'Cidade', required: false, aliases: ['cidade','city','municipio'] },
-  { key: 'uf', label: 'UF / Estado', required: false, aliases: ['uf','estado','state'] },
-  { key: 'engajamento', label: 'Engajamento', required: false, aliases: ['engajamento','engagement'] },
-  { key: 'satisfacao_percebida', label: 'Satisfação Percebida', required: false, aliases: ['satisfacao_percebida','satisfacao','satisfação','nps','csat'] },
-  { key: 'tempo_contrato', label: 'Tempo de Contrato', required: false, aliases: ['tempo_contrato','contrato','tempo de contrato','meses'] },
-  { key: 'inadimplencia', label: 'Inadimplência', required: false, aliases: ['inadimplencia','inadimplência','inadimplente','atraso'] },
-  { key: 'ultima_atividade', label: 'Última Atividade', required: false, aliases: ['ultima_atividade','última atividade','ultima atividade','last activity'] }
+  { key: 'dominio', label: 'Instância * (Identificador Único)', required: true, aliases: ['dominio','domínio','instancia','instância','instance','slug','domain','site','url','app'] },
+  { key: 'razao_social', label: 'Razão Social / Nome da Empresa', required: false, aliases: ['razao_social','razão social','razao social','nome','empresa','cliente','company'] },
+  { key: 'nome_app', label: 'Nome do App', required: false, aliases: ['nome_app','nome do app','app_name','aplicativo'] },
+  { key: 'responsavel', label: 'Responsável / Decisor', required: false, aliases: ['responsavel','responsável','decisor','cs','csm','gestor','owner'] },
+  { key: 'cargo', label: 'Cargo', required: false, aliases: ['cargo','funcao','função','role'] },
+  { key: 'contato', label: 'WhatsApp / Telefone', required: false, aliases: ['contato','telefone','celular','whatsapp','fone','phone'] },
+  { key: 'email', label: 'E-mail', required: false, aliases: ['email','e-mail','mail'] },
+  { key: 'parceiro', label: 'Parceiro / Distribuidor', required: false, aliases: ['parceiro','distribuidor','canal','representante'] },
+  { key: 'health_score', label: 'Health Score', required: false, aliases: ['health_score','health score','health','saude','saúde'] },
+  { key: 'jornada', label: 'Jornada do Cliente', required: false, aliases: ['jornada','etapa','fase','estagio','stage','lifecycle'] },
+  { key: 'mrr', label: 'MRR (R$)', required: false, aliases: ['mrr','receita','valor','faturamento','mensalidade','revenue'] },
+  { key: 'tempo_contrato', label: 'Tempo de Contrato', required: false, aliases: ['tempo_contrato','contrato','meses'] },
+  { key: 'inadimplencia', label: 'Inadimplência', required: false, aliases: ['inadimplencia','inadimplência','inadimplente'] }
 ];
 
-let importState = {
-  fileName: '',
-  fileSize: 0,
-  rawHeaders: [],
-  rawRows: [],
-  fieldMapping: {},
-  upsertMode: true
-};
-
-function normalizeStringClean(str) {
-  return String(str || '').toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-}
-
-function cleanDomain(val) {
-  if (!val) return '';
-  let str = String(val).trim().toLowerCase();
-  str = str.replace(/^https?:\/\//i, '').replace(/^www\./i, '');
-  str = str.split('/')[0];
-  return str.trim();
-}
-
-function cleanMrr(val) {
-  if (val === null || val === undefined || val === '') return 0;
-  if (typeof val === 'number') return isNaN(val) ? 0 : val;
-  let str = String(val).trim().replace(/[R$\s]/g, '');
-  if (str.includes(',') && str.includes('.')) {
-    if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
-      str = str.replace(/\./g, '').replace(',', '.');
-    } else {
-      str = str.replace(/,/g, '');
-    }
-  } else if (str.includes(',')) {
-    str = str.replace(',', '.');
-  }
-  const n = parseFloat(str);
-  return isNaN(n) ? 0 : Math.round(n * 100) / 100;
-}
-
-function cleanHealthScore(val) {
-  if (!val) return null;
-  const str = normalizeStringClean(val);
-  if (str.includes('saud')) return 'Saudável';
-  if (str.includes('alert')) return 'Em Alerta';
-  if (str.includes('risc')) return 'Em Risco';
-  if (str.includes('churn') || str.includes('retenc')) return 'Retenção de Churn';
-  const directMap = {
-    'saudavel': 'Saudável', 'emalerta': 'Em Alerta', 'emrisco': 'Em Risco', 'retencaodechurn': 'Retenção de Churn'
-  };
-  return directMap[str] || null;
-}
-
-function cleanInadimplencia(val) {
-  if (!val) return 'Não';
-  const str = normalizeStringClean(val);
-  if (['sim', 's', 'yes', 'y', 'true', '1', 'inadimplente'].includes(str)) return 'Sim';
-  return 'Não';
-}
+let importState = { fileName: '', fileSize: 0, rawHeaders: [], rawRows: [], fieldMapping: {}, upsertMode: true };
 
 function openImportModal() {
-  importState = {
-    fileName: '',
-    fileSize: 0,
-    rawHeaders: [],
-    rawRows: [],
-    fieldMapping: {},
-    upsertMode: true
-  };
+  importState = { fileName: '', fileSize: 0, rawHeaders: [], rawRows: [], fieldMapping: {}, upsertMode: true };
   renderImportStep1();
 }
 
 function renderImportStep1() {
-  const html = `
-    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+  openModal(`
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
       <div>
         <h3 class="font-bold text-slate-900 text-base">Importar Clientes em Massa</h3>
-        <p class="text-xs text-slate-400 mt-0.5">Carregue sua base a partir de planilhas Excel (.xlsx, .xls) ou arquivos CSV.</p>
+        <p class="text-xs text-slate-400">Envie sua planilha Excel (.xlsx, .xls) ou arquivo CSV.</p>
       </div>
-      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
     </div>
 
-    <!-- DROPZONE -->
     <div id="importDropZone" class="border-2 border-dashed border-slate-200 hover:border-brand-400 bg-slate-50/60 hover:bg-brand-50/20 rounded-2xl p-8 text-center transition cursor-pointer group">
       <input type="file" id="importFileInput" accept=".xlsx, .xls, .csv" class="hidden">
-      <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-brand-100/70 text-brand-600 flex items-center justify-center group-hover:scale-110 transition">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center group-hover:scale-110 transition">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </div>
-      <p class="font-semibold text-sm text-slate-800 mb-1">Arraste e solte sua planilha aqui</p>
-      <p class="text-xs text-slate-400 mb-4">Suporta arquivos <span class="font-mono font-medium text-slate-600">.xlsx</span>, <span class="font-mono font-medium text-slate-600">.xls</span> ou <span class="font-mono font-medium text-slate-600">.csv</span></p>
-      <button type="button" onclick="document.getElementById('importFileInput').click()" class="inline-flex items-center gap-2 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      <p class="font-semibold text-xs text-slate-800 mb-1">Arraste e solte seu arquivo aqui</p>
+      <p class="text-[11px] text-slate-400 mb-3">Formatos suportados: <span class="font-mono text-slate-600">.xlsx, .xls, .csv</span></p>
+      <button type="button" onclick="document.getElementById('importFileInput').click()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2 rounded-xl transition">
         Selecionar Arquivo
       </button>
     </div>
 
-    <!-- MODELO DE PLANILHA -->
-    <div class="mt-5 p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        </div>
+    <div class="mt-4 p-3.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-2 text-xs">
+      <div class="flex items-center gap-2.5">
+        <span class="text-lg">📊</span>
         <div>
-          <p class="text-xs font-semibold text-slate-800">Precisa de um modelo pronto?</p>
-          <p class="text-[11px] text-slate-400">Baixe uma planilha com as colunas certas e dados de exemplo.</p>
+          <p class="font-semibold text-slate-800">Baixar Modelo Pronto</p>
+          <p class="text-[11px] text-slate-400">Com as colunas certas e exemplos reais.</p>
         </div>
       </div>
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <button type="button" onclick="downloadImportTemplate('xlsx')" class="flex-1 sm:flex-none text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition">
-          Baixar .XLSX
-        </button>
-        <button type="button" onclick="downloadImportTemplate('csv')" class="flex-1 sm:flex-none text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition">
-          Baixar .CSV
-        </button>
+      <div class="flex items-center gap-1.5">
+        <button onclick="downloadImportTemplate('xlsx')" class="text-[11px] font-medium bg-white border border-slate-200 hover:bg-slate-50 px-2.5 py-1.5 rounded-lg">.XLSX</button>
+        <button onclick="downloadImportTemplate('csv')" class="text-[11px] font-medium bg-white border border-slate-200 hover:bg-slate-50 px-2.5 py-1.5 rounded-lg">.CSV</button>
       </div>
-    </div>
+    </div>`, 'max-w-md');
 
-    <!-- INFORMAÇÕES DE COLUNAS -->
-    <div class="mt-4 text-[11px] text-slate-400 space-y-1">
-      <p class="font-medium text-slate-500">Dicas para importação:</p>
-      <ul class="list-disc pl-4 space-y-0.5">
-        <li>A coluna <strong class="text-slate-600">Instância</strong> (ou Domínio) é obrigatória e usada como identificador único (ex: <code>apdolago</code>, <code>wcenter</code>, <code>postodahora</code>).</li>
-        <li>Campos como <strong class="text-slate-600">MRR</strong> (R$), <strong class="text-slate-600">Health Score</strong> e <strong class="text-slate-600">Responsável</strong> são automaticamente formatados.</li>
-        <li>Você poderá revisar o mapeamento de cada coluna antes de confirmar o salvamento.</li>
-      </ul>
-    </div>
-  `;
-
-  openModal(html, 'max-w-2xl');
-  setupDropZone();
-}
-
-function setupDropZone() {
-  const dropZone = document.getElementById('importDropZone');
   const fileInput = document.getElementById('importFileInput');
-  if (!dropZone || !fileInput) return;
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('border-brand-500', 'bg-brand-50/40');
-  });
-
-  dropZone.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('border-brand-500', 'bg-brand-50/40');
-  });
-
-  dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('border-brand-500', 'bg-brand-50/40');
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processImportFile(e.dataTransfer.files[0]);
-    }
-  });
+  const dropZone = document.getElementById('importDropZone');
 
   fileInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      processImportFile(e.target.files[0]);
-    }
+    if (e.target.files && e.target.files[0]) handleFileSelected(e.target.files[0]);
+  });
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-brand-500','bg-brand-50/40'); });
+  dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-brand-500','bg-brand-50/40'); });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-brand-500','bg-brand-50/40');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFileSelected(e.dataTransfer.files[0]);
   });
 }
 
-function processImportFile(file) {
-  if (!file) return;
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-    return toast('Formato inválido. Envie um arquivo .xlsx, .xls ou .csv', true);
-  }
-
+function handleFileSelected(file) {
   importState.fileName = file.name;
   importState.fileSize = file.size;
 
@@ -818,339 +1305,129 @@ function processImportFile(file) {
   reader.onload = (e) => {
     try {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+      const workbook = XLSX.read(data, { type: 'array' });
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
-      
-      const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
 
-      if (!jsonRows || jsonRows.length === 0) {
-        return toast('A planilha selecionada está vazia ou sem linhas de dados.', true);
-      }
+      if (!json || json.length < 2) return toast('Planilha vazia ou sem linhas de dados.', true);
 
-      // Detect headers
-      const headers = Object.keys(jsonRows[0]);
-      importState.rawHeaders = headers;
-      importState.rawRows = jsonRows;
+      importState.rawHeaders = json[0].map(h => String(h || '').trim());
+      importState.rawRows = json.slice(1).filter(row => row.some(cell => cell !== ''));
 
-      // Auto match mappings
-      autoMatchHeaders();
+      // Mapeamento automático inteligente
+      importState.fieldMapping = {};
+      DB_CLIENTE_FIELDS.forEach(field => {
+        const idx = importState.rawHeaders.findIndex(header => {
+          const norm = header.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+          return field.aliases.some(alias => {
+            const normAlias = alias.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+            return norm === normAlias || norm.includes(normAlias);
+          });
+        });
+        if (idx !== -1) importState.fieldMapping[field.key] = importState.rawHeaders[idx];
+      });
+
       renderImportStep2();
     } catch (err) {
       console.error(err);
       toast('Erro ao processar planilha: ' + err.message, true);
     }
   };
-  reader.onerror = () => toast('Erro ao ler arquivo.', true);
   reader.readAsArrayBuffer(file);
 }
 
-function autoMatchHeaders() {
-  importState.fieldMapping = {};
-  const cleanHeaderMap = {};
-  importState.rawHeaders.forEach(h => {
-    cleanHeaderMap[normalizeStringClean(h)] = h;
-  });
-
-  DB_CLIENTE_FIELDS.forEach(field => {
-    let matchedHeader = null;
-    for (const alias of field.aliases) {
-      const cleanAlias = normalizeStringClean(alias);
-      if (cleanHeaderMap[cleanAlias]) {
-        matchedHeader = cleanHeaderMap[cleanAlias];
-        break;
-      }
-    }
-    if (matchedHeader) {
-      importState.fieldMapping[field.key] = matchedHeader;
-    }
-  });
-}
-
-function getProcessedRecords() {
-  const mapping = importState.fieldMapping;
-  const processed = [];
-  const invalidRows = [];
-
-  importState.rawRows.forEach((row, idx) => {
-    const rawDom = mapping.dominio ? row[mapping.dominio] : '';
-    const dom = cleanDomain(rawDom);
-
-    if (!dom) {
-      invalidRows.push({ line: idx + 2, reason: 'Instância ausente ou inválida', raw: row });
-      return;
-    }
-
-    const item = {
-      dominio: dom,
-      razao_social: mapping.razao_social && row[mapping.razao_social] ? String(row[mapping.razao_social]).trim() : dom,
-      responsavel: mapping.responsavel && row[mapping.responsavel] ? String(row[mapping.responsavel]).trim() : null,
-      health_score: mapping.health_score ? cleanHealthScore(row[mapping.health_score]) : null,
-      jornada: mapping.jornada && row[mapping.jornada] ? String(row[mapping.jornada]).trim() : 'Onboarding',
-      mrr: mapping.mrr ? cleanMrr(row[mapping.mrr]) : 0,
-      vertical: mapping.vertical && row[mapping.vertical] ? String(row[mapping.vertical]).trim() : null,
-      prioridade: mapping.prioridade && row[mapping.prioridade] ? String(row[mapping.prioridade]).trim() : null,
-      cidade: mapping.cidade && row[mapping.cidade] ? String(row[mapping.cidade]).trim() : null,
-      uf: mapping.uf && row[mapping.uf] ? String(row[mapping.uf]).trim().toUpperCase().slice(0,2) : null,
-      engajamento: mapping.engajamento && row[mapping.engajamento] ? String(row[mapping.engajamento]).trim() : null,
-      satisfacao_percebida: mapping.satisfacao_percebida && row[mapping.satisfacao_percebida] ? String(row[mapping.satisfacao_percebida]).trim() : null,
-      tempo_contrato: mapping.tempo_contrato && row[mapping.tempo_contrato] ? String(row[mapping.tempo_contrato]).trim() : null,
-      inadimplencia: mapping.inadimplencia ? cleanInadimplencia(row[mapping.inadimplencia]) : 'Não',
-      ultima_atividade: mapping.ultima_atividade && row[mapping.ultima_atividade] ? String(row[mapping.ultima_atividade]).trim() : null
-    };
-
-    processed.push(item);
-  });
-
-  return { processed, invalidRows };
-}
-
 function renderImportStep2() {
-  const { processed, invalidRows } = getProcessedRecords();
-  const totalRows = importState.rawRows.length;
+  const processed = processImportRows();
   const validCount = processed.length;
 
-  const html = `
-    <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+  openModal(`
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-mono font-semibold bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">Passo 2 de 2</span>
-          <h3 class="font-bold text-slate-900 text-base">Revisão e Mapeamento de Colunas</h3>
-        </div>
-        <p class="text-xs text-slate-400 mt-0.5">Arquivo: <strong class="text-slate-700 font-mono">${importState.fileName}</strong> (${totalRows} registros encontrados)</p>
+        <h3 class="font-bold text-slate-900 text-base">Mapeamento de Colunas</h3>
+        <p class="text-xs text-slate-400">${importState.fileName} · ${importState.rawRows.length} linhas detectadas</p>
       </div>
-      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+    </div>
+
+    <div class="space-y-2 max-h-[340px] overflow-y-auto pr-1 text-xs">
+      ${DB_CLIENTE_FIELDS.map(f => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="font-medium text-slate-700">${f.label}</span>
+          <select onchange="updateFieldMapping('${f.key}', this.value)" class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white focus:outline-none max-w-[200px]">
+            <option value="">— Não mapear —</option>
+            ${importState.rawHeaders.map(h => `<option value="${h}" ${importState.fieldMapping[f.key] === h ? 'selected' : ''}>${h}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>
+
+    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+      <button onclick="renderImportStep1()" class="text-xs font-medium border border-slate-200 px-3.5 py-2 rounded-xl">Voltar</button>
+      <button onclick="executeImport()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl shadow-sm transition">
+        Confirmar e Importar (${validCount} válidos)
       </button>
-    </div>
-
-    <!-- MAPPING ACCORDION / GRID -->
-    <div class="mb-5 bg-slate-50 border border-slate-200/80 rounded-xl p-4">
-      <div class="flex items-center justify-between mb-3">
-        <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><circle cx="4" cy="14" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="16" r="2"/></svg>
-          Mapeamento dos Campos
-        </h4>
-        <span class="text-[11px] text-slate-400">Verifique se as colunas da planilha correspondem aos campos do sistema</span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        ${DB_CLIENTE_FIELDS.map(f => {
-          const selected = importState.fieldMapping[f.key] || '';
-          return `
-            <div class="bg-white p-2.5 rounded-lg border border-slate-200">
-              <label class="text-[11px] font-semibold ${f.required ? 'text-brand-600' : 'text-slate-600'} block truncate" title="${f.label}">
-                ${f.label}
-              </label>
-              <select onchange="onMappingChange('${f.key}', this.value)" class="w-full mt-1 text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-400">
-                <option value="">— Não mapear —</option>
-                ${importState.rawHeaders.map(h => `<option value="${h}" ${h === selected ? 'selected' : ''}>${h}</option>`).join('')}
-              </select>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- OPÇÃO DE UPSERT -->
-    <div class="mb-5 flex items-center gap-3 p-3 bg-brand-50/50 border border-brand-100 rounded-xl">
-      <input type="checkbox" id="importUpsertToggle" ${importState.upsertMode ? 'checked' : ''} onchange="importState.upsertMode = this.checked" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-      <label for="importUpsertToggle" class="text-xs text-slate-700 cursor-pointer">
-        <strong class="font-semibold text-slate-900">Atualizar registros existentes (Upsert):</strong> Se a instância já existir na base, atualiza os dados com a planilha. Se desmarcado, instâncias existentes serão mantidas.
-      </label>
-    </div>
-
-    <!-- PREVIEW TABLE -->
-    <div class="mb-5">
-      <div class="flex items-center justify-between mb-2">
-        <h4 class="text-xs font-bold text-slate-800">Pré-visualização dos dados (primeiras linhas)</h4>
-        <span class="text-xs font-mono font-medium ${validCount > 0 ? 'text-emerald-600' : 'text-red-600'}">
-          ${validCount} de ${totalRows} registros válidos para importar
-        </span>
-      </div>
-
-      <div id="previewTableContainer" class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
-        ${renderPreviewTableHtml(processed)}
-      </div>
-
-      ${invalidRows.length > 0 ? `
-        <div class="mt-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
-          <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-          <div>
-            <strong>Atenção:</strong> ${invalidRows.length} linha(s) não possuem o campo <em>Instância</em> preenchido e serão desconsideradas.
-          </div>
-        </div>
-      ` : ''}
-    </div>
-
-    <!-- BOTÕES DE AÇÃO -->
-    <div class="flex items-center justify-between pt-4 border-t border-slate-100 gap-3">
-      <button type="button" onclick="renderImportStep1()" class="text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 px-4 py-2.5 rounded-lg transition">
-        ← Trocar Arquivo
-      </button>
-      <div class="flex items-center gap-2">
-        <button type="button" onclick="closeModal()" class="text-xs font-medium text-slate-500 hover:text-slate-700 px-4 py-2.5 rounded-lg transition">
-          Cancelar
-        </button>
-        <button type="button" onclick="startImportExecution()" ${validCount === 0 ? 'disabled' : ''} class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-lg shadow-sm transition">
-          Confirmar e Importar (${validCount} clientes)
-        </button>
-      </div>
-    </div>
-  `;
-
-  openModal(html, 'max-w-4xl');
+    </div>`, 'max-w-lg');
 }
 
-function renderPreviewTableHtml(processed) {
-  if (!processed || processed.length === 0) {
-    return `<div class="p-8 text-center text-slate-400 text-xs">Nenhum dado válido para exibição. Verifique se o campo "Instância" está mapeado para a coluna correta.</div>`;
-  }
-
-  const sample = processed.slice(0, 5);
-  return `
-    <div class="overflow-x-auto max-h-60">
-      <table class="w-full text-xs text-left">
-        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider sticky top-0">
-          <tr>
-            <th class="px-3.5 py-2.5">Instância</th>
-            <th class="px-3.5 py-2.5">Razão Social</th>
-            <th class="px-3.5 py-2.5">Responsável</th>
-            <th class="px-3.5 py-2.5">Health Score</th>
-            <th class="px-3.5 py-2.5">Jornada</th>
-            <th class="px-3.5 py-2.5 text-right">MRR</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          ${sample.map(r => `
-            <tr class="hover:bg-slate-50/70 transition">
-              <td class="px-3.5 py-2 font-mono text-slate-800">${r.dominio}</td>
-              <td class="px-3.5 py-2 text-slate-700 truncate max-w-[180px]">${r.razao_social || '—'}</td>
-              <td class="px-3.5 py-2 text-slate-600">${r.responsavel || '—'}</td>
-              <td class="px-3.5 py-2">${healthBadge(r.health_score)}</td>
-              <td class="px-3.5 py-2 text-slate-600">${r.jornada || '—'}</td>
-              <td class="px-3.5 py-2 text-right font-mono text-slate-800">${formatBRL(r.mrr)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
+function updateFieldMapping(key, col) {
+  if (col) importState.fieldMapping[key] = col;
+  else delete importState.fieldMapping[key];
 }
 
-function onMappingChange(fieldKey, rawHeader) {
-  importState.fieldMapping[fieldKey] = rawHeader;
-  const { processed } = getProcessedRecords();
-  const container = document.getElementById('previewTableContainer');
-  if (container) {
-    container.innerHTML = renderPreviewTableHtml(processed);
-  }
-}
+function processImportRows() {
+  const domCol = importState.fieldMapping['dominio'];
+  if (!domCol) return [];
+  const domIdx = importState.rawHeaders.indexOf(domCol);
+  if (domIdx === -1) return [];
 
-async function startImportExecution() {
-  const { processed } = getProcessedRecords();
-  if (!processed || processed.length === 0) {
-    return toast('Não há registros válidos para importar.', true);
-  }
+  const processed = [];
+  importState.rawRows.forEach(row => {
+    const rawDom = row[domIdx];
+    if (!rawDom) return;
+    const dom = String(rawDom).trim().toLowerCase();
+    if (!dom) return;
 
-  // Render Step 3: Loading Progress
-  const total = processed.length;
-  openModal(`
-    <div class="py-8 px-4 text-center">
-      <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center animate-spin">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-      </div>
-      <h3 class="font-bold text-slate-900 text-base mb-1">Importando clientes...</h3>
-      <p id="importProgressMsg" class="text-xs text-slate-500 mb-5">Processando registros e salvando no Supabase...</p>
-      
-      <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden mb-2">
-        <div id="importProgressBar" class="bg-brand-600 h-3 rounded-full transition-all duration-200" style="width: 0%"></div>
-      </div>
-      <p id="importProgressPercent" class="text-xs font-mono font-semibold text-slate-700">0%</p>
-    </div>
-  `, 'max-w-md');
-
-  const chunkSize = 50;
-  let importedCount = 0;
-  let errorCount = 0;
-  const errors = [];
-
-  for (let i = 0; i < total; i += chunkSize) {
-    const chunk = processed.slice(i, i + chunkSize);
-    const progress = Math.min(100, Math.round(((i + chunk.length) / total) * 100));
-
-    const bar = document.getElementById('importProgressBar');
-    const pct = document.getElementById('importProgressPercent');
-    const msg = document.getElementById('importProgressMsg');
-    if (bar) bar.style.width = progress + '%';
-    if (pct) pct.textContent = `${progress}% (${Math.min(i + chunk.length, total)} de ${total})`;
-    if (msg) msg.textContent = `Enviando lote ${Math.floor(i / chunkSize) + 1} de ${Math.ceil(total / chunkSize)}...`;
-
-    try {
-      const { error } = importState.upsertMode
-        ? await sb.from('clientes').upsert(chunk, { onConflict: 'dominio' })
-        : await sb.from('clientes').insert(chunk);
-
-      if (error) {
-        console.error('Erro no lote:', error);
-        errorCount += chunk.length;
-        errors.push(error.message);
-      } else {
-        importedCount += chunk.length;
+    const record = { dominio: dom };
+    DB_CLIENTE_FIELDS.forEach(f => {
+      if (f.key === 'dominio') return;
+      const colName = importState.fieldMapping[f.key];
+      if (colName) {
+        const cIdx = importState.rawHeaders.indexOf(colName);
+        if (cIdx !== -1) {
+          const val = row[cIdx];
+          if (f.key === 'mrr') {
+            record.mrr = Number(String(val).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0;
+          } else {
+            record[f.key] = val !== undefined && val !== null ? String(val).trim() : null;
+          }
+        }
       }
-    } catch (err) {
-      console.error(err);
-      errorCount += chunk.length;
-      errors.push(err.message);
-    }
-  }
-
-  // Render Step 4: Finished Summary
-  renderImportSummary(total, importedCount, errorCount, errors);
-  await loadAll();
+    });
+    processed.push(record);
+  });
+  return processed;
 }
 
-function renderImportSummary(total, importedCount, errorCount, errors) {
-  const isSuccess = errorCount === 0;
+async function executeImport() {
+  const records = processImportRows();
+  if (records.length === 0) return toast('Nenhum registro válido para importar. Mapeie a coluna Instância.', true);
 
-  openModal(`
-    <div class="text-center py-4">
-      <div class="w-14 h-14 mx-auto mb-3 rounded-full ${isSuccess ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'} flex items-center justify-center">
-        ${isSuccess ? `
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        ` : `
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        `}
-      </div>
+  toast(`Importando ${records.length} clientes...`);
 
-      <h3 class="font-bold text-slate-900 text-lg mb-1">${isSuccess ? 'Importação Concluída!' : 'Importação Finalizada com Alertas'}</h3>
-      <p class="text-xs text-slate-500 mb-5">Os dados foram processados e já estão disponíveis no sistema.</p>
-
-      <div class="grid grid-cols-2 gap-3 mb-5 text-left">
-        <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
-          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Importados / Atualizados</p>
-          <p class="font-mono text-xl font-bold text-emerald-600 mt-1">${importedCount}</p>
-        </div>
-        <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-100">
-          <p class="text-[11px] font-medium text-slate-400 uppercase tracking-wide">Falhas ou Ignorados</p>
-          <p class="font-mono text-xl font-bold ${errorCount > 0 ? 'text-red-600' : 'text-slate-700'} mt-1">${errorCount}</p>
-        </div>
-      </div>
-
-      ${errors.length > 0 ? `
-        <div class="text-left bg-red-50 border border-red-200 rounded-xl p-3 mb-5 max-h-28 overflow-y-auto text-xs text-red-700">
-          <p class="font-semibold mb-1">Detalhes dos erros:</p>
-          <ul class="list-disc pl-4 space-y-0.5">
-            ${errors.map(e => `<li>${e}</li>`).join('')}
-          </ul>
-        </div>
-      ` : ''}
-
-      <button onclick="closeModal()" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold py-2.5 rounded-lg shadow-sm transition">
-        Concluir e Ver Carteira
-      </button>
-    </div>
-  `, 'max-w-md');
+  try {
+    for (let i = 0; i < records.length; i += 25) {
+      const chunk = records.slice(i, i + 25);
+      const { error } = await sb.from('clientes').upsert(chunk, { onConflict: 'dominio' });
+      if (error) throw error;
+    }
+    closeModal();
+    toast(`Sucesso! ${records.length} clientes importados/atualizados.`);
+    await loadClientes();
+    renderDashboard();
+  } catch (err) {
+    console.error(err);
+    toast('Erro na importação: ' + err.message, true);
+  }
 }
 
 function downloadImportTemplate(format = 'xlsx') {
@@ -1158,61 +1435,36 @@ function downloadImportTemplate(format = 'xlsx') {
     {
       "Instância": "apdolago",
       "Razão Social": "POSTO DO LAGO LIMITADA",
+      "Nome do App": "Posto do Lago",
       "Responsável": "Gabriela",
+      "Cargo": "Dono/Sócio",
+      "Contato": "(19) 99833-9600",
+      "E-mail": "gabriela@postodolago.com",
+      "Parceiro": "Adaptive",
       "Health Score": "Saudável",
       "Jornada": "Adoção",
       "MRR": 3500.00,
-      "Vertical": "Fuel",
-      "Prioridade": "Alta",
-      "Cidade": "Araras",
-      "UF": "SP",
-      "Engajamento": "Alto",
-      "Satisfação Percebida": "Promotor",
       "Tempo de Contrato": "12 meses",
       "Inadimplência": "Não"
     },
     {
       "Instância": "wcenter",
       "Razão Social": "WCenter Tecnologia e Serviços",
+      "Nome do App": "WCenter Combustíveis",
       "Responsável": "Carlos Silva",
+      "Cargo": "Gerente Geral",
+      "Contato": "(41) 98844-1234",
+      "E-mail": "carlos@wcenter.com",
+      "Parceiro": "Inoveh",
       "Health Score": "Em Alerta",
-      "Jornada": "Onboarding",
+      "Jornada": "Ongoing",
       "MRR": 1850.50,
-      "Vertical": "Fuel",
-      "Prioridade": "Média",
-      "Cidade": "Curitiba",
-      "UF": "PR",
-      "Engajamento": "Médio",
-      "Satisfação Percebida": "Neutro",
       "Tempo de Contrato": "6 meses",
       "Inadimplência": "Não"
-    },
-    {
-      "Instância": "postodahora",
-      "Razão Social": "Posto da Hora Combustíveis Ltda",
-      "Responsável": "Mariana Santos",
-      "Health Score": "Em Risco",
-      "Jornada": "Renovação",
-      "MRR": 5200.00,
-      "Vertical": "Fuel",
-      "Prioridade": "Alta",
-      "Cidade": "Rio de Janeiro",
-      "UF": "RJ",
-      "Engajamento": "Baixo",
-      "Satisfação Percebida": "Detrator",
-      "Tempo de Contrato": "24 meses",
-      "Inadimplência": "Sim"
     }
   ];
 
   const ws = XLSX.utils.json_to_sheet(sampleData);
-  const colWidths = [
-    { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 16 }, { wch: 15 },
-    { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 6 },
-    { wch: 14 }, { wch: 22 }, { wch: 18 }, { wch: 14 }
-  ];
-  ws['!cols'] = colWidths;
-
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Modelo_Clientes");
 
@@ -1221,7 +1473,7 @@ function downloadImportTemplate(format = 'xlsx') {
   } else {
     XLSX.writeFile(wb, "modelo_importacao_clientes.xlsx", { bookType: "xlsx" });
   }
-  toast("Planilha modelo baixada!");
+  toast('Planilha modelo baixada!');
 }
 
 function exportCarteiraXlsx() {
@@ -1232,32 +1484,24 @@ function exportCarteiraXlsx() {
   const exportData = clientesCache.map(c => ({
     "Instância": c.dominio || '',
     "Razão Social": c.razao_social || '',
-    "Responsável": c.responsavel || '',
+    "Nome do App": c.nome_app || '',
+    "Decisor / Responsável": c.responsavel || '',
+    "Cargo": c.cargo || '',
+    "Contato / WhatsApp": c.contato || '',
+    "Parceiro": c.parceiro || '',
+    "E-mail": c.email || '',
     "Health Score": c.health_score || '',
     "Jornada": c.jornada || '',
     "MRR": Number(c.mrr) || 0,
-    "Vertical": c.vertical || '',
-    "Prioridade": c.prioridade || '',
-    "Cidade": c.cidade || '',
-    "UF": c.uf || '',
-    "Engajamento": c.engajamento || '',
-    "Satisfação Percebida": c.satisfacao_percebida || '',
     "Tempo de Contrato": c.tempo_contrato || '',
     "Inadimplência": c.inadimplencia || 'Não',
-    "Última Atividade": c.ultima_atividade || ''
+    "Ticket Jira": c.ticket_url || ''
   }));
 
   const ws = XLSX.utils.json_to_sheet(exportData);
-  const colWidths = [
-    { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 16 }, { wch: 15 },
-    { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 6 },
-    { wch: 14 }, { wch: 22 }, { wch: 18 }, { wch: 14 }, { wch: 16 }
-  ];
-  ws['!cols'] = colWidths;
-
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Carteira");
-  
+  XLSX.utils.book_append_sheet(wb, ws, "Carteira_Clientes");
+
   const today = new Date().toISOString().slice(0, 10);
   XLSX.writeFile(wb, `carteira_clientes_${today}.xlsx`);
   toast('Carteira exportada com sucesso!');
