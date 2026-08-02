@@ -877,7 +877,7 @@ function getProcessedRecords() {
     const dom = cleanDomain(rawDom);
 
     if (!dom) {
-      invalidRows.push({ line: idx + 2, reason: 'Domínio ausente ou inválido', raw: row });
+      invalidRows.push({ line: idx + 2, reason: 'Instância ausente ou inválida', raw: row });
       return;
     }
 
@@ -956,7 +956,7 @@ function renderImportStep2() {
     <div class="mb-5 flex items-center gap-3 p-3 bg-brand-50/50 border border-brand-100 rounded-xl">
       <input type="checkbox" id="importUpsertToggle" ${importState.upsertMode ? 'checked' : ''} onchange="importState.upsertMode = this.checked" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
       <label for="importUpsertToggle" class="text-xs text-slate-700 cursor-pointer">
-        <strong class="font-semibold text-slate-900">Atualizar registros existentes (Upsert):</strong> Se o domínio já existir na base, atualiza os dados com a planilha. Se desmarcado, domínios existentes serão mantidos.
+        <strong class="font-semibold text-slate-900">Atualizar registros existentes (Upsert):</strong> Se a instância já existir na base, atualiza os dados com a planilha. Se desmarcado, instâncias existentes serão mantidas.
       </label>
     </div>
 
