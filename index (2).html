@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>CS Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = { theme: { extend: {
+    fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] },
+    colors: { brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'} },
+    boxShadow: { card: '0 1px 2px 0 rgba(15,23,42,0.04), 0 1px 3px 0 rgba(15,23,42,0.06)' }
+  } } }
+</script>
+<style>
+  body { background:#f4f5f7; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:8px; }
+  .nav-item.active { background:#eef2ff; color:#4338ca; font-weight:600; }
+  .nav-item.active .nav-icon { color:#4f46e5; }
+  .view { display:none; }
+  .view.active { display:block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+  .kanban-col { min-width: 300px; }
+  .modal-backdrop { background:rgba(15,23,42,.45); backdrop-filter: blur(2px); }
+</style>
+</head>
+<body class="text-slate-800 antialiased">
+
+<!-- ============ CONFIG SUPABASE ============ -->
+<script>
+  // 🔧 Troque pelos dados do SEU projeto Supabase (Project Settings > API)
+  const SUPABASE_URL = 'https://flbxiwbojltbpbdayjtg.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsYnhpd2Jvamx0YnBiZGF5anRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MTgyMTUsImV4cCI6MjEwMTE5NDIxNX0.McxXlY7QMc8nDt1i9NAvNCrcibdakoeeqZoT6DqGGu4';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
+<!-- ============ TELA DE LOGIN ============ -->
+<div id="authScreen" class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm bg-white rounded-2xl shadow-card border border-slate-100 p-8">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm">CS</div>
+      <div>
+        <p class="font-bold text-slate-900 leading-none text-sm">CS Platform</p>
+        <p class="text-[11px] text-slate-400 leading-none mt-1">Customer Success</p>
+      </div>
+    </div>
+    <h1 id="authTitle" class="text-lg font-bold text-slate-900 mb-1">Entrar</h1>
+    <p class="text-xs text-slate-400 mb-5">Acesse com seu e-mail e senha da equipe.</p>
+
+    <form id="authForm" class="space-y-3">
+      <div>
+        <label class="text-xs font-medium text-slate-500">E-mail</label>
+        <input id="authEmail" type="email" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500">Senha</label>
+        <input id="authPassword" type="password" required minlength="6" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
+      </div>
+      <p id="authError" class="text-xs text-red-600 hidden"></p>
+      <button type="submit" id="authSubmitBtn" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded-lg transition">Entrar</button>
+    </form>
+
+    <p class="text-xs text-slate-400 text-center mt-4">
+      <span id="authToggleText">Ainda não tem conta?</span>
+      <button id="authToggleBtn" class="text-brand-600 font-medium hover:underline">Criar conta</button>
+    </p>
+  </div>
+</div>
+
+<!-- ============ APP (SPA) ============ -->
+<div id="appScreen" class="hidden flex h-screen overflow-hidden">
+  <aside class="w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col">
+    <div class="h-16 flex items-center gap-2 px-6 border-b border-slate-100">
+      <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-sm">CS</div>
+      <div>
+        <p class="font-bold text-slate-900 leading-none text-sm">CS Platform</p>
+        <p class="text-[11px] text-slate-400 leading-none mt-1">Customer Success</p>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <button data-view="dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
+        <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button data-view="carteira" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
+        <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Carteira de Clientes
+      </button>
+      <button data-view="onboarding" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
+        <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+        Onboarding
+      </button>
+      <button data-view="risco" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">
+        <svg class="nav-icon w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        Gestão de Risco
+      </button>
+    </nav>
+    <div class="p-3 border-t border-slate-100 space-y-1">
+      <p id="userEmail" class="text-[11px] text-slate-400 px-3 truncate"></p>
+      <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-xs font-medium text-slate-500 hover:text-red-600 py-2 rounded-lg hover:bg-slate-50 transition">Sair</button>
+    </div>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto">
+    <header class="h-16 bg-white/80 backdrop-blur border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
+      <h1 id="pageTitle" class="text-lg font-bold text-slate-900">Dashboard</h1>
+      <div id="headerActions"></div>
+    </header>
+
+    <div class="p-8 max-w-[1400px] mx-auto">
+
+      <!-- DASHBOARD -->
+      <section id="view-dashboard" class="view active">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6" id="kpiCards"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div class="lg:col-span-1 bg-white rounded-2xl shadow-card border border-slate-100 p-6">
+            <h3 class="font-semibold text-slate-800 mb-4 text-sm">Distribuição de Health Score</h3>
+            <canvas id="healthChart" height="220"></canvas>
+            <div id="healthLegend" class="mt-4 space-y-2 text-xs"></div>
+          </div>
+          <div class="lg:col-span-2 bg-white rounded-2xl shadow-card border border-slate-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-slate-800 text-sm">Atividades registradas (últimos 30 dias)</h3>
+              <button onclick="openAtividadeModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg transition">+ Registrar atividade</button>
+            </div>
+            <div id="atividadesList" class="space-y-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARTEIRA -->
+      <section id="view-carteira" class="view">
+        <div class="flex items-center justify-between mb-4 gap-3">
+          <input id="carteiraSearch" type="text" placeholder="Buscar por cliente, domínio ou responsável..."
+            class="w-full max-w-sm text-sm border border-slate-200 rounded-lg px-3.5 py-2.5 bg-white shadow-card focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
+          <button onclick="openClienteModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2.5 rounded-lg transition whitespace-nowrap">+ Novo Cliente</button>
+        </div>
+        <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide border-b border-slate-100">
+                  <th class="text-left font-semibold px-5 py-3">Cliente</th>
+                  <th class="text-left font-semibold px-5 py-3">Responsável</th>
+                  <th class="text-left font-semibold px-5 py-3">Health Score</th>
+                  <th class="text-left font-semibold px-5 py-3">Jornada</th>
+                  <th class="text-right font-semibold px-5 py-3">MRR</th>
+                  <th class="text-right font-semibold px-5 py-3">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="carteiraBody" class="divide-y divide-slate-50"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ONBOARDING -->
+      <section id="view-onboarding" class="view">
+        <div class="flex justify-end mb-4">
+          <button onclick="openOnboardingModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2.5 rounded-lg transition">+ Novo registro de Onboarding</button>
+        </div>
+        <div id="kanbanBoard" class="flex gap-5 overflow-x-auto pb-4"></div>
+      </section>
+
+      <!-- RISCO -->
+      <section id="view-risco" class="view">
+        <div class="flex justify-end mb-4">
+          <button onclick="openCasoModal()" class="text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3.5 py-2.5 rounded-lg transition">+ Novo Caso Crítico</button>
+        </div>
+        <div id="riscoList" class="space-y-4"></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============ MODAL GENÉRICO ============ -->
+<div id="modalRoot" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop px-4">
+  <div id="modalCard" class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"></div>
+</div>
+
+<script>
+// ============================================================
+// AUTENTICAÇÃO
+// ============================================================
+let isSignup = false;
+
+document.getElementById('authToggleBtn').addEventListener('click', () => {
+  isSignup = !isSignup;
+  document.getElementById('authTitle').textContent = isSignup ? 'Criar conta' : 'Entrar';
+  document.getElementById('authSubmitBtn').textContent = isSignup ? 'Criar conta' : 'Entrar';
+  document.getElementById('authToggleText').textContent = isSignup ? 'Já tem conta?' : 'Ainda não tem conta?';
+  document.getElementById('authToggleBtn').textContent = isSignup ? 'Entrar' : 'Criar conta';
+});
+
+document.getElementById('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.classList.add('hidden');
+
+  const { error } = isSignup
+    ? await sb.auth.signUp({ email, password })
+    : await sb.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    errEl.textContent = error.message;
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (isSignup) {
+    errEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar (se a confirmação estiver ativa) e faça login.';
+    errEl.classList.remove('hidden');
+    errEl.classList.remove('text-red-600');
+    errEl.classList.add('text-green-600');
+  }
+});
+
+async function logout() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('appScreen').classList.add('flex');
+    document.getElementById('userEmail').textContent = session.user.email;
+    loadAll();
+  }
+});
+
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+const titles = { dashboard:'Dashboard', carteira:'Carteira de Clientes', onboarding:'Kanban de Onboarding', risco:'Gestão de Risco' };
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+    document.getElementById('pageTitle').textContent = titles[btn.dataset.view];
+  });
+});
+
+// ============================================================
+// HELPERS
+// ============================================================
+const HEALTH_STYLES = {
+  'Saudável':          { dot:'#16a34a', bg:'bg-green-50',  text:'text-green-700',  chart:'#22c55e' },
+  'Em Alerta':         { dot:'#d97706', bg:'bg-amber-50',  text:'text-amber-700',  chart:'#f59e0b' },
+  'Em Risco':          { dot:'#dc2626', bg:'bg-red-50',    text:'text-red-700',    chart:'#ef4444' },
+  'Retenção de Churn': { dot:'#991b1b', bg:'bg-red-100',   text:'text-red-800',    chart:'#b91c1c' },
+  'Não avaliado':      { dot:'#94a3b8', bg:'bg-slate-100', text:'text-slate-500',  chart:'#cbd5e1' }
+};
+function healthBadge(score) {
+  const s = HEALTH_STYLES[score] || HEALTH_STYLES['Não avaliado'];
+  return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${s.bg} ${s.text}">
+            <span style="width:8px;height:8px;border-radius:99px;background:${s.dot};margin-right:6px;display:inline-block;"></span>${score || 'Não avaliado'}
+          </span>`;
+}
+function formatBRL(n) { return (n || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 }); }
+function closeModal() { document.getElementById('modalRoot').classList.add('hidden'); }
+function openModal(html) {
+  document.getElementById('modalCard').innerHTML = html;
+  document.getElementById('modalRoot').classList.remove('hidden');
+}
+function toast(msg, isError) {
+  const el = document.createElement('div');
+  el.className = `fixed bottom-6 right-6 z-[60] px-4 py-3 rounded-lg shadow-lg text-sm text-white ${isError ? 'bg-red-600' : 'bg-slate-900'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ============================================================
+// DATA STATE
+// ============================================================
+let clientesCache = [];
+
+async function loadAll() {
+  await loadClientes();
+  await Promise.all([renderDashboard(), renderKanban(), renderRisco()]);
+}
+
+async function loadClientes() {
+  const { data, error } = await sb.from('clientes').select('*').order('razao_social');
+  if (error) { toast(error.message, true); return; }
+  clientesCache = data || [];
+  paintCarteira(clientesCache);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+let healthChartInstance = null;
+
+async function renderDashboard() {
+  const totalClientes = clientesCache.length;
+  const mrrTotal = clientesCache.reduce((s,c) => s + (Number(c.mrr) || 0), 0);
+
+  const { count: casosAbertos } = await sb.from('casos_criticos').select('*', { count:'exact', head:true }).eq('status','Aberto');
+
+  const dist = { 'Saudável':0, 'Em Alerta':0, 'Em Risco':0, 'Retenção de Churn':0, 'Não avaliado':0 };
+  clientesCache.forEach(c => { dist[c.health_score && dist.hasOwnProperty(c.health_score) ? c.health_score : 'Não avaliado']++; });
+
+  const kpis = [
+    { label:'Total de Clientes', value: totalClientes, accent:'brand', icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z' },
+    { label:'MRR Total', value: formatBRL(mrrTotal), accent:'green', icon:'M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+    { label:'Clientes em Risco', value: casosAbertos || 0, accent:'red', icon:'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z' },
+    { label:'Saudáveis', value: dist['Saudável'], accent:'emerald', icon:'M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4 12 14.01l-3-3' }
+  ];
+  const accentMap = { brand:'bg-brand-50 text-brand-600', green:'bg-emerald-50 text-emerald-600', red:'bg-red-50 text-red-600', emerald:'bg-emerald-50 text-emerald-600' };
+  document.getElementById('kpiCards').innerHTML = kpis.map(k => `
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-5">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs font-medium text-slate-500">${k.label}</span>
+        <div class="w-8 h-8 rounded-lg ${accentMap[k.accent]} flex items-center justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${k.icon}"/></svg>
+        </div>
+      </div>
+      <p class="font-mono text-2xl font-bold text-slate-900">${k.value}</p>
+    </div>`).join('');
+
+  const labels = Object.keys(dist).filter(k => dist[k] > 0);
+  const values = labels.map(l => dist[l]);
+  const colors = labels.map(l => HEALTH_STYLES[l].chart);
+  const ctx = document.getElementById('healthChart').getContext('2d');
+  if (healthChartInstance) healthChartInstance.destroy();
+  healthChartInstance = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data:values, backgroundColor:colors, borderWidth:0 }] }, options:{ plugins:{ legend:{ display:false } }, cutout:'68%' } });
+  document.getElementById('healthLegend').innerHTML = labels.map((l,i) => `
+    <div class="flex items-center justify-between">
+      <span class="flex items-center gap-2"><span style="width:8px;height:8px;border-radius:99px;display:inline-block;background:${colors[i]}"></span>${l}</span>
+      <span class="font-mono font-semibold">${values[i]}</span>
+    </div>`).join('');
+
+  const since = new Date(); since.setDate(since.getDate() - 30);
+  const { data: atividades } = await sb.from('atividades').select('tipo, data, clientes(razao_social,dominio)').gte('data', since.toISOString().slice(0,10)).order('data', { ascending:false }).limit(20);
+  document.getElementById('atividadesList').innerHTML = (atividades || []).map(a => `
+    <div class="flex items-center justify-between text-sm border-b border-slate-50 pb-2">
+      <div>
+        <p class="text-slate-700 font-medium">${a.tipo}</p>
+        <p class="text-xs text-slate-400">${a.clientes ? (a.clientes.razao_social || a.clientes.dominio) : ''}</p>
+      </div>
+      <span class="text-xs text-slate-400 font-mono">${a.data}</span>
+    </div>`).join('') || '<p class="text-xs text-slate-400">Nenhuma atividade registrada nos últimos 30 dias.</p>';
+}
+
+function openAtividadeModal() {
+  openModal(`
+    <h3 class="font-bold text-slate-900 mb-4">Registrar atividade</h3>
+    <form id="atividadeForm" class="space-y-3">
+      <div>
+        <label class="text-xs font-medium text-slate-500">Cliente</label>
+        <select id="ativCliente" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
+          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500">Tipo de atividade</label>
+        <select id="ativTipo" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
+          <option>Aguardando Contato</option><option>Tentativa de Contato</option><option>Follow-Up</option>
+          <option>Reunião Agendada</option><option>Reunião Realizada</option><option>Reunião de Onboarding</option>
+          <option>Treinamento</option><option>Reunião de Check-In</option><option>Visita Presencial</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-slate-500">Observação</label>
+        <textarea id="ativObs" rows="3" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
+        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
+      </div>
+    </form>`);
+  document.getElementById('atividadeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { data: { user } } = await sb.auth.getUser();
+    const { error } = await sb.from('atividades').insert({
+      cliente_id: document.getElementById('ativCliente').value,
+      tipo: document.getElementById('ativTipo').value,
+      observacao: document.getElementById('ativObs').value,
+      responsavel_id: user.id
+    });
+    if (error) return toast(error.message, true);
+    closeModal(); toast('Atividade registrada.'); renderDashboard();
+  });
+}
+
+// ============================================================
+// CARTEIRA DE CLIENTES
+// ============================================================
+function paintCarteira(clientes) {
+  document.getElementById('carteiraBody').innerHTML = clientes.map(c => `
+    <tr class="hover:bg-slate-50 transition">
+      <td class="px-5 py-3"><p class="font-medium text-slate-800">${c.razao_social || c.dominio}</p><p class="text-xs text-slate-400">${c.dominio}</p></td>
+      <td class="px-5 py-3 text-slate-600">${c.responsavel || '—'}</td>
+      <td class="px-5 py-3">${healthBadge(c.health_score)}</td>
+      <td class="px-5 py-3 text-slate-600">${c.jornada || '—'}</td>
+      <td class="px-5 py-3 text-right font-mono text-slate-800">${formatBRL(c.mrr)}</td>
+      <td class="px-5 py-3 text-right"><button onclick='openClienteModal(${JSON.stringify(c).replace(/'/g,"&apos;")})' class="text-xs font-medium text-brand-600 hover:underline">Editar</button></td>
+    </tr>`).join('') || `<tr><td colspan="6" class="px-5 py-10 text-center text-slate-400 text-sm">Nenhum cliente cadastrado ainda.</td></tr>`;
+}
+
+document.getElementById('carteiraSearch').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  paintCarteira(clientesCache.filter(c => (c.razao_social||'').toLowerCase().includes(q) || (c.dominio||'').toLowerCase().includes(q) || (c.responsavel||'').toLowerCase().includes(q)));
+});
+
+function openClienteModal(cliente) {
+  const c = cliente || {};
+  openModal(`
+    <h3 class="font-bold text-slate-900 mb-4">${c.id ? 'Editar cliente' : 'Novo cliente'}</h3>
+    <form id="clienteForm" class="space-y-3">
+      <div><label class="text-xs font-medium text-slate-500">Domínio *</label><input id="cDominio" value="${c.dominio||''}" ${c.id?'readonly':''} required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 ${c.id?'bg-slate-50':''}"></div>
+      <div><label class="text-xs font-medium text-slate-500">Razão Social</label><input id="cRazao" value="${c.razao_social||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
+      <div><label class="text-xs font-medium text-slate-500">Responsável</label><input id="cResp" value="${c.responsavel||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
+      <div>
+        <label class="text-xs font-medium text-slate-500">Health Score</label>
+        <select id="cHealth" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
+          <option value="" ${!c.health_score?'selected':''}>Não avaliado</option>
+          ${['Saudável','Em Alerta','Em Risco','Retenção de Churn'].map(h=>`<option ${c.health_score===h?'selected':''}>${h}</option>`).join('')}
+        </select>
+      </div>
+      <div><label class="text-xs font-medium text-slate-500">Jornada do Cliente</label><input id="cJornada" value="${c.jornada||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
+      <div><label class="text-xs font-medium text-slate-500">MRR (R$)</label><input id="cMrr" type="number" step="0.01" value="${c.mrr||0}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
+        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
+      </div>
+    </form>`);
+  document.getElementById('clienteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      dominio: document.getElementById('cDominio').value.trim(),
+      razao_social: document.getElementById('cRazao').value,
+      responsavel: document.getElementById('cResp').value,
+      health_score: document.getElementById('cHealth').value || null,
+      jornada: document.getElementById('cJornada').value,
+      mrr: Number(document.getElementById('cMrr').value) || 0
+    };
+    const { error } = c.id ? await sb.from('clientes').update(payload).eq('id', c.id) : await sb.from('clientes').insert(payload);
+    if (error) return toast(error.message, true);
+    closeModal(); toast('Cliente salvo.'); await loadClientes(); renderDashboard();
+  });
+}
+
+// ============================================================
+// ONBOARDING (KANBAN)
+// ============================================================
+async function renderKanban() {
+  const { data, error } = await sb.from('onboarding').select('*, clientes(dominio,razao_social)').order('created_at');
+  if (error) return toast(error.message, true);
+
+  const columns = {};
+  (data || []).forEach(r => {
+    const key = r.situacao || 'Sem Situação';
+    (columns[key] = columns[key] || []).push(r);
+  });
+  const preferred = ['Integração de Contrato','Em Implantação','Escalado','Concluído'];
+  const keys = Object.keys(columns).sort((a,b) => {
+    const ia = preferred.indexOf(a), ib = preferred.indexOf(b);
+    if (ia===-1 && ib===-1) return a.localeCompare(b);
+    if (ia===-1) return 1; if (ib===-1) return -1; return ia-ib;
+  });
+  const colColors = ['border-t-brand-400','border-t-amber-400','border-t-red-400','border-t-emerald-400'];
+
+  document.getElementById('kanbanBoard').innerHTML = keys.map((key,i) => `
+    <div class="kanban-col shrink-0 w-80">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <h3 class="text-sm font-semibold text-slate-700">${key}</h3>
+        <span class="text-xs font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">${columns[key].length}</span>
+      </div>
+      <div class="space-y-3 border-t-4 ${colColors[i%colColors.length]} bg-slate-50/50 rounded-b-xl p-2 min-h-[120px]">
+        ${columns[key].map(card => `
+          <div class="bg-white rounded-xl shadow-card border border-slate-100 p-4">
+            <p class="font-medium text-sm text-slate-800 mb-1">${card.clientes ? (card.clientes.razao_social || card.clientes.dominio) : '—'}</p>
+            <p class="text-xs text-slate-500 mb-2">${card.etapa || '—'}</p>
+            ${card.observacao ? `<p class="text-xs text-slate-400 mb-2 line-clamp-3">${card.observacao}</p>` : ''}
+            <select onchange="moveOnboarding('${card.id}', this.value)" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5">
+              ${preferred.map(p => `<option value="${p}" ${p===card.situacao?'selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+async function moveOnboarding(id, situacao) {
+  const { error } = await sb.from('onboarding').update({ situacao }).eq('id', id);
+  if (error) return toast(error.message, true);
+  toast('Etapa atualizada.'); renderKanban();
+}
+
+function openOnboardingModal() {
+  openModal(`
+    <h3 class="font-bold text-slate-900 mb-4">Novo registro de Onboarding</h3>
+    <form id="onbForm" class="space-y-3">
+      <div>
+        <label class="text-xs font-medium text-slate-500">Cliente</label>
+        <select id="onbCliente" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
+          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio}</option>`).join('')}
+        </select>
+      </div>
+      <div><label class="text-xs font-medium text-slate-500">Etapa</label><input id="onbEtapa" value="Acompanhamento da Implantação" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
+      <div>
+        <label class="text-xs font-medium text-slate-500">Situação</label>
+        <select id="onbSituacao" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
+          <option>Integração de Contrato</option><option>Em Implantação</option><option>Escalado</option><option>Concluído</option>
+        </select>
+      </div>
+      <div><label class="text-xs font-medium text-slate-500">Observação</label><textarea id="onbObs" rows="3" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea></div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
+        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
+      </div>
+    </form>`);
+  document.getElementById('onbForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { error } = await sb.from('onboarding').insert({
+      cliente_id: document.getElementById('onbCliente').value,
+      etapa: document.getElementById('onbEtapa').value,
+      situacao: document.getElementById('onbSituacao').value,
+      observacao: document.getElementById('onbObs').value
+    });
+    if (error) return toast(error.message, true);
+    closeModal(); toast('Registro criado.'); renderKanban();
+  });
+}
+
+// ============================================================
+// GESTÃO DE RISCO
+// ============================================================
+async function renderRisco() {
+  const { data, error } = await sb.from('casos_criticos').select('*, clientes(dominio,razao_social)').eq('status','Aberto').order('created_at', { ascending:false });
+  if (error) return toast(error.message, true);
+
+  document.getElementById('riscoList').innerHTML = (data || []).map(c => `
+    <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-6">
+      <div class="flex items-start justify-between gap-4 mb-3 flex-wrap">
+        <div>
+          <p class="font-semibold text-slate-900">${c.clientes ? (c.clientes.razao_social || c.clientes.dominio) : '—'}</p>
+          <p class="text-xs text-slate-400 mt-0.5">${c.tipo || ''} · Responsável: ${c.responsavel || '—'} · Parceiro: ${c.parceiro || '—'}</p>
+        </div>
+        <button onclick="resolveCaso('${c.id}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 hover:bg-red-100 transition">
+          <span style="width:6px;height:6px;border-radius:99px;background:#dc2626;display:inline-block;"></span>Marcar como resolvido
+        </button>
+      </div>
+      <p class="text-sm text-slate-600 mb-3">${c.situacao || ''}</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div class="bg-slate-50 rounded-lg p-3"><p class="font-semibold text-slate-500 mb-1">Plano de Ação</p><p class="text-slate-700">${c.plano_de_acao || '—'}</p></div>
+        <div class="bg-slate-50 rounded-lg p-3"><p class="font-semibold text-slate-500 mb-1">Próximo Contato</p><p class="text-slate-700">${c.proximo_contato || '—'}</p></div>
+      </div>
+    </div>`).join('') || `<div class="text-center text-slate-400 text-sm py-10">Nenhum caso crítico em aberto 🎉</div>`;
+}
+
+async function resolveCaso(id) {
+  const { error } = await sb.from('casos_criticos').update({ status:'Resolvido' }).eq('id', id);
+  if (error) return toast(error.message, true);
+  toast('Caso marcado como resolvido.'); renderRisco(); renderDashboard();
+}
+
+function openCasoModal() {
+  openModal(`
+    <h3 class="font-bold text-slate-900 mb-4">Novo caso crítico</h3>
+    <form id="casoForm" class="space-y-3">
+      <div>
+        <label class="text-xs font-medium text-slate-500">Cliente</label>
+        <select id="csCliente" required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5">
+          ${clientesCache.map(c => `<option value="${c.id}">${c.razao_social || c.dominio}</option>`).join('')}
+        </select>
+      </div>
+      <div><label class="text-xs font-medium text-slate-500">Tipo</label><input id="csTipo" placeholder="Ex: Implantação Atrasada" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
+      <div><label class="text-xs font-medium text-slate-500">Situação</label><textarea id="csSituacao" rows="2" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea></div>
+      <div><label class="text-xs font-medium text-slate-500">Plano de Ação</label><textarea id="csPlano" rows="2" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></textarea></div>
+      <div><label class="text-xs font-medium text-slate-500">Próximo Contato</label><input id="csProximo" type="date" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeModal()" class="flex-1 text-sm font-medium border border-slate-200 rounded-lg py-2.5">Cancelar</button>
+        <button type="submit" class="flex-1 text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2.5">Salvar</button>
+      </div>
+    </form>`);
+  document.getElementById('casoForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { error } = await sb.from('casos_criticos').insert({
+      cliente_id: document.getElementById('csCliente').value,
+      tipo: document.getElementById('csTipo').value,
+      situacao: document.getElementById('csSituacao').value,
+      plano_de_acao: document.getElementById('csPlano').value,
+      proximo_contato: document.getElementById('csProximo').value || null
+    });
+    if (error) return toast(error.message, true);
+    closeModal(); toast('Caso registrado.'); renderRisco(); renderDashboard();
+  });
+}
+</script>
+</body>
+</html>
