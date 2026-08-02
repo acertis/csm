@@ -139,7 +139,7 @@
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-4 gap-3">
           <div class="relative flex-1 max-w-sm">
             <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input id="carteiraSearch" type="text" placeholder="Buscar por cliente, domínio ou responsável..."
+            <input id="carteiraSearch" type="text" placeholder="Buscar por cliente, instância ou responsável..."
               class="w-full pl-9 pr-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-white shadow-card focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400">
           </div>
           <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -441,7 +441,7 @@ function openClienteModal(cliente) {
   openModal(`
     <h3 class="font-bold text-slate-900 mb-4">${c.id ? 'Editar cliente' : 'Novo cliente'}</h3>
     <form id="clienteForm" class="space-y-3">
-      <div><label class="text-xs font-medium text-slate-500">Domínio *</label><input id="cDominio" value="${c.dominio||''}" ${c.id?'readonly':''} required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 ${c.id?'bg-slate-50':''}"></div>
+      <div><label class="text-xs font-medium text-slate-500">Instância * (Identificador Único)</label><input id="cDominio" placeholder="ex: apdolago" value="${c.dominio||''}" ${c.id?'readonly':''} required class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5 ${c.id?'bg-slate-50':''}"></div>
       <div><label class="text-xs font-medium text-slate-500">Razão Social</label><input id="cRazao" value="${c.razao_social||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
       <div><label class="text-xs font-medium text-slate-500">Responsável</label><input id="cResp" value="${c.responsavel||''}" class="w-full mt-1 text-sm border border-slate-200 rounded-lg px-3 py-2.5"></div>
       <div>
@@ -625,7 +625,7 @@ function openCasoModal() {
 // IMPORTAÇÃO E EXPORTAÇÃO DE DADOS (XLSX / CSV)
 // ============================================================
 const DB_CLIENTE_FIELDS = [
-  { key: 'dominio', label: 'Domínio * (Identificador Único)', required: true, aliases: ['dominio','domínio','domain','site','url','web','link'] },
+  { key: 'dominio', label: 'Instância * (Identificador Único)', required: true, aliases: ['dominio','domínio','instancia','instância','instance','slug','domain','site','url','app','nome do app'] },
   { key: 'razao_social', label: 'Razão Social / Nome da Empresa', required: false, aliases: ['razao_social','razão social','razao social','nome','empresa','cliente','razao','company','nome da empresa','nome fantasia'] },
   { key: 'responsavel', label: 'Responsável (CSM)', required: false, aliases: ['responsavel','responsável','cs','csm','gestor','owner','analista','responsavel cs','account manager'] },
   { key: 'health_score', label: 'Health Score', required: false, aliases: ['health_score','health score','health','saude','saúde','status saude','status_saude'] },
@@ -763,7 +763,7 @@ function renderImportStep1() {
     <div class="mt-4 text-[11px] text-slate-400 space-y-1">
       <p class="font-medium text-slate-500">Dicas para importação:</p>
       <ul class="list-disc pl-4 space-y-0.5">
-        <li>A coluna <strong class="text-slate-600">Domínio</strong> é obrigatória e usada como identificador único (ex: <code>empresa.com.br</code>).</li>
+        <li>A coluna <strong class="text-slate-600">Instância</strong> (ou Domínio) é obrigatória e usada como identificador único (ex: <code>apdolago</code>, <code>wcenter</code>, <code>postodahora</code>).</li>
         <li>Campos como <strong class="text-slate-600">MRR</strong> (R$), <strong class="text-slate-600">Health Score</strong> e <strong class="text-slate-600">Responsável</strong> são automaticamente formatados.</li>
         <li>Você poderá revisar o mapeamento de cada coluna antes de confirmar o salvamento.</li>
       </ul>
@@ -977,7 +977,7 @@ function renderImportStep2() {
         <div class="mt-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2">
           <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <div>
-            <strong>Atenção:</strong> ${invalidRows.length} linha(s) não possuem o campo <em>Domínio</em> preenchido e serão desconsideradas.
+            <strong>Atenção:</strong> ${invalidRows.length} linha(s) não possuem o campo <em>Instância</em> preenchido e serão desconsideradas.
           </div>
         </div>
       ` : ''}
@@ -1004,7 +1004,7 @@ function renderImportStep2() {
 
 function renderPreviewTableHtml(processed) {
   if (!processed || processed.length === 0) {
-    return `<div class="p-8 text-center text-slate-400 text-xs">Nenhum dado válido para exibição. Verifique se o campo "Domínio" está mapeado para a coluna correta.</div>`;
+    return `<div class="p-8 text-center text-slate-400 text-xs">Nenhum dado válido para exibição. Verifique se o campo "Instância" está mapeado para a coluna correta.</div>`;
   }
 
   const sample = processed.slice(0, 5);
@@ -1013,7 +1013,7 @@ function renderPreviewTableHtml(processed) {
       <table class="w-full text-xs text-left">
         <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100 uppercase tracking-wider sticky top-0">
           <tr>
-            <th class="px-3.5 py-2.5">Domínio</th>
+            <th class="px-3.5 py-2.5">Instância</th>
             <th class="px-3.5 py-2.5">Razão Social</th>
             <th class="px-3.5 py-2.5">Responsável</th>
             <th class="px-3.5 py-2.5">Health Score</th>
@@ -1156,15 +1156,15 @@ function renderImportSummary(total, importedCount, errorCount, errors) {
 function downloadImportTemplate(format = 'xlsx') {
   const sampleData = [
     {
-      "Domínio": "empresaexemplo.com.br",
-      "Razão Social": "Empresa Exemplo Comércio e Serviços Ltda",
-      "Responsável": "Carlos Silva",
+      "Instância": "apdolago",
+      "Razão Social": "POSTO DO LAGO LIMITADA",
+      "Responsável": "Gabriela",
       "Health Score": "Saudável",
       "Jornada": "Adoção",
       "MRR": 3500.00,
-      "Vertical": "Fintech",
+      "Vertical": "Fuel",
       "Prioridade": "Alta",
-      "Cidade": "São Paulo",
+      "Cidade": "Araras",
       "UF": "SP",
       "Engajamento": "Alto",
       "Satisfação Percebida": "Promotor",
@@ -1172,13 +1172,13 @@ function downloadImportTemplate(format = 'xlsx') {
       "Inadimplência": "Não"
     },
     {
-      "Domínio": "acmetecnologia.com",
-      "Razão Social": "ACME Soluções Digitais S/A",
-      "Responsável": "Mariana Santos",
+      "Instância": "wcenter",
+      "Razão Social": "WCenter Tecnologia e Serviços",
+      "Responsável": "Carlos Silva",
       "Health Score": "Em Alerta",
       "Jornada": "Onboarding",
       "MRR": 1850.50,
-      "Vertical": "Tecnologia",
+      "Vertical": "Fuel",
       "Prioridade": "Média",
       "Cidade": "Curitiba",
       "UF": "PR",
@@ -1188,13 +1188,13 @@ function downloadImportTemplate(format = 'xlsx') {
       "Inadimplência": "Não"
     },
     {
-      "Domínio": "logisticaexpress.com.br",
-      "Razão Social": "Express Transportes e Logística Ltda",
-      "Responsável": "Carlos Silva",
+      "Instância": "postodahora",
+      "Razão Social": "Posto da Hora Combustíveis Ltda",
+      "Responsável": "Mariana Santos",
       "Health Score": "Em Risco",
       "Jornada": "Renovação",
       "MRR": 5200.00,
-      "Vertical": "Logística",
+      "Vertical": "Fuel",
       "Prioridade": "Alta",
       "Cidade": "Rio de Janeiro",
       "UF": "RJ",
@@ -1207,7 +1207,7 @@ function downloadImportTemplate(format = 'xlsx') {
 
   const ws = XLSX.utils.json_to_sheet(sampleData);
   const colWidths = [
-    { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 16 }, { wch: 15 },
+    { wch: 20 }, { wch: 40 }, { wch: 20 }, { wch: 16 }, { wch: 15 },
     { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 6 },
     { wch: 14 }, { wch: 22 }, { wch: 18 }, { wch: 14 }
   ];
@@ -1230,7 +1230,7 @@ function exportCarteiraXlsx() {
   }
 
   const exportData = clientesCache.map(c => ({
-    "Domínio": c.dominio || '',
+    "Instância": c.dominio || '',
     "Razão Social": c.razao_social || '',
     "Responsável": c.responsavel || '',
     "Health Score": c.health_score || '',
